@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://registry.airpp.dev/schema/airpp-manifest-0.2.0.schema.json",
+  "title": "AIRPP Manifest v0.2.0 Public Draft",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "airpp_version",
+    "manifest_id",
+    "conformance_level",
+    "created_at",
+    "report",
+    "ai_involvement",
+    "actors"
+  ],
+  "properties": {
+    "airpp_version": {
+      "type": "string",
+      "pattern": "^0\\.2\\.0(-[A-Za-z0-9_.-]+)?$"
+    },
+    "manifest_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "conformance_level": {
+      "type": "string",
+      "enum": [
+        "basic",
+        "auditable",
+        "high_assurance"
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "schema": {
+      "type": "object"
+    },
+    "report": {
+      "type": "object",
+      "required": [
+        "report_id",
+        "title",
+        "output_type",
+        "language",
+        "created_at",
+        "current_version"
+      ],
+      "properties": {
+        "report_id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "output_type": {
+          "type": "string"
+        },
+        "language": {
+          "type": "string"
+        },
+        "jurisdiction": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "current_version": {
+          "type": "string"
+        },
+        "intended_use": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "ai_involvement": {
+      "type": "object",
+      "required": [
+        "level",
+        "summary"
+      ],
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": [
+            "none_declared",
+            "formatting_only",
+            "language_assist",
+            "summarisation",
+            "extraction",
+            "draft_assist",
+            "substantive_draft",
+            "analysis_assist",
+            "translation",
+            "mixed_workflow",
+            "unknown"
+          ]
+        },
+        "human_final_responsibility": {
+          "type": "boolean"
+        },
+        "summary": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "actors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "actor_id",
+          "actor_type",
+          "display_name",
+          "role"
+        ],
+        "properties": {
+          "actor_id": {
+            "type": "string"
+          },
+          "actor_type": {
+            "type": "string",
+            "enum": [
+              "human",
+              "organisation",
+              "ai_service",
+              "software_system",
+              "reviewer",
+              "approver"
+            ]
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "organisation": {
+            "type": "string"
+          },
+          "identity_ref": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "content_blocks": {
+      "type": "array"
+    },
+    "sources": {
+      "type": "array"
+    },
+    "generation_events": {
+      "type": "array"
+    },
+    "review_events": {
+      "type": "array"
+    },
+    "verification_records": {
+      "type": "array"
+    },
+    "exports": {
+      "type": "array"
+    },
+    "integrity": {
+      "type": "object"
+    },
+    "extensions": {
+      "type": "object"
+    }
+  }
+}

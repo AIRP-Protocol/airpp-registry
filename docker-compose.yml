@@ -1,0 +1,43 @@
+services:
+  registry:
+    build: .
+    ports:
+      - "${PORT:-8787}:8787"
+    environment:
+      PORT: 8787
+      NODE_ENV: ${NODE_ENV:-production}
+      DATABASE_URL: postgres://airpp:airpp@db:5432/airpp_registry
+      AIRPP_BOOTSTRAP_API_KEY: ${AIRPP_BOOTSTRAP_API_KEY:-replace-immediately}
+      JWT_SECRET: ${JWT_SECRET:-change-this-in-production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8787}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@registry.airpp.dev}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: airpp
+      POSTGRES_PASSWORD: airpp
+      POSTGRES_DB: airpp_registry
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airpp -d airpp_registry"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

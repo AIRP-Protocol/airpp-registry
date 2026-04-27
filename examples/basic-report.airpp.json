@@ -1,0 +1,29 @@
+{
+  "airpp_version": "0.2.0",
+  "manifest_id": "airpp-mf-basic-001",
+  "conformance_level": "basic",
+  "created_at": "2026-04-25T09:00:00Z",
+  "report": {
+    "report_id": "report-basic-001",
+    "title": "Example Internal Briefing",
+    "output_type": "policy_briefing",
+    "language": "en-GB",
+    "created_at": "2026-04-25T08:30:00Z",
+    "current_version": "1.0.0",
+    "intended_use": "internal_review"
+  },
+  "ai_involvement": {
+    "level": "language_assist",
+    "human_final_responsibility": true,
+    "summary": "AI was used to improve clarity and structure. The final document was reviewed by a human."
+  },
+  "actors": [
+    {
+      "actor_id": "actor-human-001",
+      "actor_type": "human",
+      "display_name": "Responsible Author",
+      "role": "author_and_reviewer",
+      "organisation": "Example Organisation"
+    }
+  ]
+}

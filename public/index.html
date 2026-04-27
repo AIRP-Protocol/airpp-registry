@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <title>AIRPP Registry MVP</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --ink: #101828;
+      --muted: #667085;
+      --line: #d0d5dd;
+      --blue: #1849a9;
+      --teal: #0e9384;
+      --purple: #6938ef;
+      --card: #ffffff;
+      --bad: #b42318;
+      --good: #067647;
+      --warn: #b54708;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--ink); }
+    header { padding: 36px 24px; background: linear-gradient(120deg, #102a56, #0e9384); color: white; }
+    header h1 { margin: 0 0 8px; font-size: 38px; letter-spacing: -0.04em; }
+    header p { margin: 0; max-width: 920px; color: #e6f4f1; font-size: 17px; }
+    nav { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; }
+    nav a { color: white; text-decoration: none; border: 1px solid rgba(255,255,255,.35); padding: 8px 12px; border-radius: 999px; }
+    main { max-width: 1220px; margin: 0 auto; padding: 28px 18px 80px; }
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 18px; box-shadow: 0 8px 24px rgba(16,24,40,.04); }
+    .span-4 { grid-column: span 4; }
+    .span-6 { grid-column: span 6; }
+    .span-8 { grid-column: span 8; }
+    .span-12 { grid-column: span 12; }
+    h2 { margin: 0 0 12px; letter-spacing: -0.02em; }
+    h3 { margin: 0 0 10px; }
+    p { color: var(--muted); line-height: 1.55; }
+    textarea, input, select { width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: 10px; font: inherit; background: white; }
+    textarea { min-height: 280px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; }
+    button { border: 0; background: var(--blue); color: white; padding: 10px 14px; border-radius: 12px; cursor: pointer; font-weight: 700; }
+    button.secondary { background: #344054; }
+    button.teal { background: var(--teal); }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .pill { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 6px 10px; background: #fff; color: #344054; font-size: 13px; margin: 3px; }
+    .status { font-weight: 800; }
+    .ok { color: var(--good); }
+    .bad { color: var(--bad); }
+    .warn { color: var(--warn); }
+    pre { white-space: pre-wrap; word-break: break-word; background: #0b1220; color: #e6edf7; padding: 14px; border-radius: 14px; overflow: auto; font-size: 13px; }
+    .small { font-size: 13px; color: var(--muted); }
+    .section { margin-top: 18px; }
+    @media (max-width: 900px) { .span-4, .span-6, .span-8 { grid-column: span 12; } header h1 { font-size: 30px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>AIRPP Registry MVP</h1>
+    <p>The public registry and conformance sandbox for AIRPP v0.2.0: validate manifests, register implementations, and test MCP-style background provenance capture.</p>
+    <nav>
+      <a href="#validator">Validator</a>
+      <a href="#registry">Implementation Registry</a>
+      <a href="#mcp">MCP Sandbox</a>
+      <a href="/api/v1/schema/0.2.0">Schema</a>
+      <a href="/api/v1/spec">Spec</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="grid">
+      <div class="card span-4">
+        <h2>Frozen public draft</h2>
+        <p><strong>AIRPP v0.2.0</strong> is frozen for implementation testing. This MVP lets vendors and developers check whether their manifests and workflows line up with the protocol.</p>
+        <span class="pill">frozen_public_draft</span>
+        <span class="pill">Basic</span>
+        <span class="pill">Auditable</span>
+        <span class="pill">High-Assurance</span>
+      </div>
+
+      <div class="card span-4">
+        <h2>What this registry is</h2>
+        <p>A conformance sandbox, schema registry, extension registry, validator API and MCP-style provenance capture test server.</p>
+      </div>
+
+      <div class="card span-4">
+        <h2>What it is not</h2>
+        <p>It is not an AI detector, not a truth engine, not a document store by default, and not a substitute for professional review.</p>
+      </div>
+
+      <div id="validator" class="card span-8">
+        <h2>Manifest validator</h2>
+        <p>Paste an AIRPP manifest below, load the example, then validate against v0.2.0.</p>
+        <div class="row">
+          <button onclick="loadExample('basic')">Load basic example</button>
+          <button onclick="loadExample('auditable')" class="teal">Load auditable example</button>
+          <button onclick="validateManifest()" class="secondary">Validate</button>
+        </div>
+        <div class="section">
+          <textarea id="manifestInput" spellcheck="false"></textarea>
+        </div>
+      </div>
+
+      <div class="card span-4">
+        <h2>Validation result</h2>
+        <div id="validationSummary" class="small">No validation run yet.</div>
+        <pre id="validationOutput">{}</pre>
+      </div>
+
+      <div id="registry" class="card span-6">
+        <h2>Register an implementation</h2>
+        <p>Use this to self-declare a vendor/project implementation for public testing.</p>
+        <label>Name</label>
+        <input id="implName" placeholder="ExampleAI Docs">
+        <label>Implementation type</label>
+        <select id="implType">
+          <option>saas_ai_vendor</option>
+          <option>middleware_orchestration</option>
+          <option>enterprise_workflow</option>
+          <option>regulated_export_pipeline</option>
+          <option>developer_tooling</option>
+        </select>
+        <label>Website</label>
+        <input id="implWebsite" placeholder="https://example.com">
+        <div class="section row">
+          <button onclick="registerImplementation()">Register public listing</button>
+          <button onclick="loadImplementations()" class="secondary">Refresh listings</button>
+        </div>
+      </div>
+
+      <div class="card span-6">
+        <h2>Public implementations</h2>
+        <div id="implementations" class="small">No listings loaded.</div>
+      </div>
+
+      <div id="mcp" class="card span-6">
+        <h2>MCP-style provenance sandbox</h2>
+        <p>Create a provenance session, record source/generation/review events, then finalise a manifest.</p>
+        <div class="row">
+          <button onclick="startMcp()">Start session</button>
+          <button onclick="recordDemoMcpEvents()" class="teal">Record demo events</button>
+          <button onclick="finaliseMcp()" class="secondary">Finalise manifest</button>
+        </div>
+        <div class="section small" id="mcpStatus">No MCP session started.</div>
+      </div>
+
+      <div class="card span-6">
+        <h2>MCP manifest output</h2>
+        <pre id="mcpOutput">{}</pre>
+      </div>
+
+      <div class="card span-12">
+        <h2>API use</h2>
+        <pre>curl -X POST http://localhost:8787/api/v1/validate \
+  -H "Content-Type: application/json" \
+  --data-binary @examples/auditable-report.airpp.json</pre>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    let mcpSessionId = null;
+
+    async function api(path, options = {}) {
+      const res = await fetch(path, {
+        headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+        ...options
+      });
+      const data = await res.json();
+      if (!res.ok) console.warn(data);
+      return data;
+    }
+
+    async function loadExample(kind) {
+      const data = await api(`/api/v1/examples/${kind}`);
+      document.getElementById('manifestInput').value = JSON.stringify(data, null, 2);
+    }
+
+    async function validateManifest() {
+      const raw = document.getElementById('manifestInput').value;
+      let manifest;
+      try { manifest = JSON.parse(raw); }
+      catch (e) {
+        document.getElementById('validationSummary').innerHTML = '<span class="bad status">Invalid JSON</span>';
+        document.getElementById('validationOutput').textContent = e.message;
+        return;
+      }
+      const result = await api('/api/v1/validate', { method: 'POST', body: JSON.stringify(manifest) });
+      document.getElementById('validationSummary').innerHTML = result.ok
+        ? '<span class="ok status">Valid AIRPP manifest</span>'
+        : '<span class="bad status">Invalid AIRPP manifest</span>';
+      document.getElementById('validationOutput').textContent = JSON.stringify(result, null, 2);
+    }
+
+    async function registerImplementation() {
+      const payload = {
+        name: document.getElementById('implName').value || 'Unnamed implementation',
+        implementation_type: document.getElementById('implType').value,
+        website: document.getElementById('implWebsite').value || null,
+        supported_airpp_versions: ['0.2.0'],
+        supported_conformance_levels: ['basic', 'auditable'],
+        supported_manifest_modes: ['detached', 'api_transport'],
+        supported_extensions: ['airpp-code', 'airpp-attestation'],
+        public_listing: true
+      };
+      const data = await api('/api/v1/implementations', { method: 'POST', body: JSON.stringify(payload) });
+      await loadImplementations();
+      alert(data.ok ? 'Implementation registered.' : 'Registration failed.');
+    }
+
+    async function loadImplementations() {
+      const data = await api('/api/v1/implementations/public');
+      const el = document.getElementById('implementations');
+      if (!data.implementations?.length) {
+        el.textContent = 'No public implementations registered yet.';
+        return;
+      }
+      el.innerHTML = data.implementations.map(i => `
+        <div class="card" style="box-shadow:none;margin:8px 0">
+          <strong>${escapeHtml(i.name)}</strong><br>
+          <span class="small">${escapeHtml(i.implementation_type)} · ${escapeHtml(i.registry_status || 'self_declared')}</span><br>
+          ${i.website ? `<a href="${escapeHtml(i.website)}">${escapeHtml(i.website)}</a>` : ''}
+        </div>
+      `).join('');
+    }
+
+    async function startMcp() {
+      const data = await api('/api/v1/mcp/start-manifest', {
+        method: 'POST',
+        body: JSON.stringify({ title: 'MCP Sandbox Output', output_type: 'code_change' })
+      });
+      mcpSessionId = data.session_id;
+      document.getElementById('mcpStatus').textContent = `Session started: ${mcpSessionId}`;
+      document.getElementById('mcpOutput').textContent = JSON.stringify(data.manifest, null, 2);
+    }
+
+    async function recordDemoMcpEvents() {
+      if (!mcpSessionId) await startMcp();
+
+      await api('/api/v1/mcp/record-source', {
+        method: 'POST',
+        body: JSON.stringify({
+          session_id: mcpSessionId,
+          source_id: 'src-repo-001',
+          source_type: 'repository',
+          title: 'AIRPP Registry Repository',
+          uri: 'git://example/airpp-registry',
+          use_state: 'selected_for_context'
+        })
+      });
+
+      await api('/api/v1/mcp/record-generation', {
+        method: 'POST',
+        body: JSON.stringify({
+          session_id: mcpSessionId,
+          block_id: 'file-api-js',
+          block_title: 'API route changes',
+          ai_involvement: 'substantive_draft',
+          input_refs: ['src-repo-001'],
+          model: { provider: 'unknown_or_redacted', service: 'coding_assistant', model_id: 'not_disclosed' },
+          prompt_record: { capture_mode: 'summary', prompt_summary: 'Generate API routes for AIRPP validation and MCP event capture.' }
+        })
+      });
+
+      await api('/api/v1/mcp/record-review', {
+        method: 'POST',
+        body: JSON.stringify({
+          session_id: mcpSessionId,
+          review_type: 'code_review',
+          review_outcome: 'approved',
+          notes: 'Demo review event.'
+        })
+      });
+
+      const data = await api('/api/v1/mcp/record-commit', {
+        method: 'POST',
+        body: JSON.stringify({
+          session_id: mcpSessionId,
+          repository: 'example/airpp-registry',
+          branch: 'feature/airpp-mcp',
+          pull_request: 1,
+          commit_sha: 'abc123demo',
+          files_changed: ['src/routes/api.js', 'src/lib/mcpManifest.js']
+        })
+      });
+
+      document.getElementById('mcpOutput').textContent = JSON.stringify(data.manifest, null, 2);
+    }
+
+    async function finaliseMcp() {
+      if (!mcpSessionId) return alert('Start an MCP session first.');
+      const data = await api('/api/v1/mcp/finalise-manifest', {
+        method: 'POST',
+        body: JSON.stringify({ session_id: mcpSessionId })
+      });
+      document.getElementById('mcpOutput').textContent = JSON.stringify(data, null, 2);
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/[&<>"']/g, s => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+      }[s]));
+    }
+
+    loadExample('auditable');
+    loadImplementations();
+  </script>
+</body>
+</html>
