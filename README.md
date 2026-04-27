@@ -48,3 +48,9 @@ AIRPP fixes that.
 - Open an issue
 - Submit a sample manifest
 - Propose schema improvements
+
+---
+
+## License
+
+MIT — see LICENSE file.
