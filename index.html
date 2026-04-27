@@ -4,1611 +4,189 @@
   <meta charset="utf-8">
   <title>AIRPP — AI Record Provenance Protocol</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="AIRPP is an open-source initiative creating portable provenance for AI-assisted work. Vendor-neutral, auditable, human-reviewed.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <meta name="description" content="AIRPP is an open-source initiative creating portable provenance for AI-assisted records, documents and workflows. Vendor-neutral, auditable and human-reviewed.">
   <style>
-    /* ─── Design tokens ──────────────────────────────────────────────── */
-    :root {
-      --navy:      #0B1D3A;
-      --navy-mid:  #102a56;
-      --teal:      #00B0A6;
-      --teal-dark: #008f87;
-      --slate:     #E6EEF7;
-      --white:     #FFFFFF;
-      --soft-grey: #F6F8FB;
-      --muted:     #667085;
-      --line:      #D0D5DD;
-      --ink:       #0B1D3A;
-      --radius-sm: 8px;
-      --radius:    14px;
-      --radius-lg: 20px;
-      --shadow-sm: 0 1px 4px rgba(11,29,58,.07);
-      --shadow:    0 4px 20px rgba(11,29,58,.09);
-      --shadow-lg: 0 12px 40px rgba(11,29,58,.13);
-    }
-
-    /* ─── Reset ──────────────────────────────────────────────────────── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
-    body {
-      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
-      color: var(--ink);
-      background: var(--white);
-      line-height: 1.6;
-      overflow-x: hidden;
-    }
-    img { display: block; max-width: 100%; }
-    a { color: inherit; text-decoration: none; }
-
-    /* ─── Typography ─────────────────────────────────────────────────── */
-    h1 { font-size: clamp(2rem, 5vw, 3.25rem); font-weight: 800; letter-spacing: -0.04em; line-height: 1.1; }
-    h2 { font-size: clamp(1.5rem, 3vw, 2.25rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.2; }
-    h3 { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.01em; }
-    h4 { font-size: 0.95rem; font-weight: 600; }
-    p  { color: var(--muted); font-size: 1rem; line-height: 1.65; }
-    .caption { font-size: 0.8rem; color: var(--muted); }
-
-    /* ─── Layout ─────────────────────────────────────────────────────── */
-    .container { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
-    .section { padding: 88px 0; }
-    .section-sm { padding: 56px 0; }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
-    .flex { display: flex; }
-    .flex-center { display: flex; align-items: center; }
-    .flex-between { display: flex; align-items: center; justify-content: space-between; }
-    .gap-8 { gap: 8px; }
-    .gap-12 { gap: 12px; }
-    .gap-16 { gap: 16px; }
-    .gap-24 { gap: 24px; }
-
-    /* ─── Buttons ─────────────────────────────────────────────────────── */
-    .btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 12px 22px; border-radius: var(--radius-sm);
-      font-size: 0.9rem; font-weight: 600; cursor: pointer;
-      border: none; transition: all .18s ease;
-      white-space: nowrap; text-decoration: none;
-    }
-    .btn-primary { background: var(--navy); color: white; }
-    .btn-primary:hover { background: #162f5a; transform: translateY(-1px); box-shadow: var(--shadow); }
-    .btn-teal { background: var(--teal); color: white; }
-    .btn-teal:hover { background: var(--teal-dark); transform: translateY(-1px); }
-    .btn-outline { background: transparent; color: var(--navy); border: 1.5px solid var(--navy); }
-    .btn-outline:hover { background: var(--navy); color: white; }
-    .btn-ghost { background: transparent; color: var(--navy); border: 1.5px solid var(--line); }
-    .btn-ghost:hover { border-color: var(--navy); }
-    .btn-sm { padding: 8px 16px; font-size: 0.82rem; }
-    .btn-lg { padding: 15px 28px; font-size: 1rem; }
-    .arrow::after { content: " →"; }
-
-    /* ─── Pills / tags ────────────────────────────────────────────────── */
-    .pill {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 4px 12px; border-radius: 999px;
-      font-size: 0.75rem; font-weight: 600; letter-spacing: 0.03em;
-      text-transform: uppercase;
-    }
-    .pill-teal   { background: #e0f7f6; color: var(--teal-dark); border: 1px solid #b2ebe9; }
-    .pill-navy   { background: #eef2f8; color: var(--navy); border: 1px solid #c8d4e6; }
-    .pill-os     { background: transparent; color: var(--teal-dark); border: 1.5px solid var(--teal); border-radius: 999px; padding: 5px 14px; font-size: 0.78rem; }
-
-    /* ─── Cards ───────────────────────────────────────────────────────── */
-    .card {
-      background: var(--white); border: 1px solid var(--line);
-      border-radius: var(--radius-lg); padding: 28px;
-      box-shadow: var(--shadow-sm);
-      transition: box-shadow .2s, transform .2s;
-    }
-    .card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
-    .card-teal { border-top: 3px solid var(--teal); }
-    .card-navy { background: var(--navy); color: white; border-color: var(--navy-mid); }
-    .card-navy p { color: #a8c0dc; }
-    .card-grey { background: var(--soft-grey); border-color: transparent; }
-
-    /* ─── Nav ─────────────────────────────────────────────────────────── */
-    nav {
-      position: sticky; top: 0; z-index: 100;
-      background: rgba(255,255,255,.96);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--line);
-    }
-    .nav-inner {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 24px; height: 64px; max-width: 1160px; margin: 0 auto;
-    }
-    .nav-logo { display: flex; align-items: center; gap: 10px; }
-    .nav-links { display: flex; align-items: center; gap: 28px; }
-    .nav-links a { font-size: 0.88rem; font-weight: 500; color: #344054; }
-    .nav-links a:hover { color: var(--navy); }
-    .nav-right { display: flex; align-items: center; gap: 12px; }
-    .nav-mobile-toggle { display: none; cursor: pointer; padding: 8px; }
-
-    /* ─── Logo SVG ────────────────────────────────────────────────────── */
-    .logo-wordmark { display: flex; align-items: center; gap: 0; }
-    .logo-text-group { display: flex; flex-direction: column; }
-    .logo-airpp { font-size: 1.35rem; font-weight: 800; color: var(--navy); letter-spacing: -0.03em; line-height: 1; }
-    .logo-airpp .a-letter { position: relative; display: inline-block; }
-    .logo-tagline { font-size: 0.62rem; color: var(--muted); font-weight: 500; letter-spacing: 0.01em; margin-top: 1px; }
-    .logo-icon-wrap { width: 36px; height: 36px; margin-right: 8px; }
-
-    /* ─── Hero ────────────────────────────────────────────────────────── */
-    .hero {
-      padding: 80px 0 72px;
-      background: linear-gradient(160deg, #f0f5ff 0%, var(--white) 60%);
-      position: relative; overflow: hidden;
-    }
-    .hero::before {
-      content: '';
-      position: absolute; right: -120px; top: -80px;
-      width: 560px; height: 560px;
-      background: radial-gradient(circle, rgba(0,176,166,.07) 0%, transparent 70%);
-      border-radius: 50%; pointer-events: none;
-    }
-    .hero-grid {
-      display: grid; grid-template-columns: 1fr 420px; gap: 56px;
-      align-items: center;
-    }
-    .hero-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
-    .hero-title { margin-bottom: 20px; }
-    .hero-sub { font-size: 1.1rem; max-width: 480px; margin-bottom: 32px; line-height: 1.6; }
-    .hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 32px; }
-    .hero-audience { display: flex; gap: 20px; flex-wrap: wrap; }
-    .hero-audience-item { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; color: var(--muted); font-weight: 500; }
-    .hero-audience-item svg { color: var(--teal); }
-
-    /* Manifest card in hero */
-    .manifest-card {
-      background: white; border: 1px solid var(--line);
-      border-radius: var(--radius-lg); padding: 24px;
-      box-shadow: var(--shadow-lg);
-      position: relative;
-    }
-    .manifest-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-    .manifest-logo-row { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
-    .manifest-id-row { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
-    .manifest-id { font-family: ui-monospace, monospace; font-size: 0.75rem; color: var(--teal-dark); }
-    .badge-verified { background: #e0f7f6; color: var(--teal-dark); border: 1px solid #b2ebe9; border-radius: 999px; font-size: 0.7rem; font-weight: 700; padding: 3px 10px; }
-    .manifest-row {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 0; border-bottom: 1px solid var(--slate);
-      cursor: pointer;
-    }
-    .manifest-row:last-child { border-bottom: none; }
-    .manifest-row-left { display: flex; align-items: center; gap: 12px; }
-    .manifest-row-icon {
-      width: 36px; height: 36px; border-radius: var(--radius-sm);
-      background: var(--soft-grey); display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-    .manifest-row-label { font-size: 0.85rem; font-weight: 600; color: var(--navy); }
-    .manifest-row-sub { font-size: 0.73rem; color: var(--muted); margin-top: 1px; }
-    .manifest-status { font-size: 0.72rem; font-weight: 700; }
-    .status-valid { color: var(--teal-dark); }
-    .status-reviewed { color: var(--navy); }
-
-    /* ─── Section headers ─────────────────────────────────────────────── */
-    .section-header { text-align: center; margin-bottom: 52px; }
-    .section-header .teal-line {
-      width: 40px; height: 3px; background: var(--teal);
-      border-radius: 2px; margin: 16px auto 0;
-    }
-    .section-label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--teal-dark); margin-bottom: 10px; }
-
-    /* ─── Feature icons ───────────────────────────────────────────────── */
-    .feature-icon {
-      width: 48px; height: 48px; border-radius: var(--radius-sm);
-      background: var(--soft-grey); display: flex; align-items: center;
-      justify-content: center; margin-bottom: 16px; color: var(--teal);
-    }
-    .feature-icon.teal-bg { background: #e0f7f6; }
-    .feature-icon.navy-bg { background: var(--navy); color: var(--teal); }
-
-    /* ─── Check list ──────────────────────────────────────────────────── */
-    .check-list { list-style: none; display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
-    .check-list li { display: flex; align-items: flex-start; gap: 10px; font-size: 0.88rem; color: var(--muted); }
-    .check-list li::before { content: '✓'; color: var(--teal); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
-
-    /* ─── Who it's for cards ──────────────────────────────────────────── */
-    .role-card {
-      background: white; border: 1px solid var(--line); border-radius: var(--radius-lg);
-      padding: 28px 24px 24px; display: flex; flex-direction: column; gap: 16px;
-      transition: all .2s;
-    }
-    .role-card:hover { border-color: var(--teal); box-shadow: var(--shadow); transform: translateY(-2px); }
-    .role-card .role-icon {
-      width: 52px; height: 52px; border-radius: 50%;
-      background: var(--soft-grey); display: flex; align-items: center;
-      justify-content: center; color: var(--navy);
-    }
-
-    /* ─── Steps ───────────────────────────────────────────────────────── */
-    .steps { display: flex; align-items: flex-start; gap: 0; }
-    .step { flex: 1; text-align: center; position: relative; }
-    .step-icon-wrap {
-      width: 56px; height: 56px; border-radius: 50%;
-      background: var(--soft-grey); border: 2px solid var(--line);
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 14px; color: var(--navy); transition: all .2s;
-    }
-    .step:hover .step-icon-wrap { border-color: var(--teal); background: #e0f7f6; color: var(--teal); }
-    .step-connector {
-      position: absolute; top: 27px; left: calc(50% + 28px);
-      right: calc(-50% + 28px); height: 1px;
-      border-top: 2px dashed var(--line);
-    }
-    .step:last-child .step-connector { display: none; }
-    .step-label { font-size: 0.88rem; font-weight: 700; color: var(--navy); }
-    .step-sub { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
-
-    /* ─── Registry preview ────────────────────────────────────────────── */
-    .registry-card {
-      background: white; border: 1px solid var(--line); border-radius: var(--radius-lg);
-      padding: 20px; transition: all .2s;
-    }
-    .registry-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
-    .reg-status { font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
-    .reg-certified { background: #e0f7f6; color: var(--teal-dark); }
-    .reg-adopted { background: #eef2f8; color: var(--navy); }
-    .reg-progress { background: #fef9ee; color: #92400e; }
-    .reg-name { font-size: 0.95rem; font-weight: 700; color: var(--navy); margin: 8px 0 2px; }
-    .reg-type { font-size: 0.75rem; color: var(--muted); }
-    .reg-desc { font-size: 0.8rem; color: var(--muted); margin-top: 10px; line-height: 1.5; }
-
-    /* ─── Badges ──────────────────────────────────────────────────────── */
-    .badge-ring {
-      width: 140px; height: 140px; border-radius: 50%;
-      border: 3px solid var(--line); display: flex; align-items: center;
-      justify-content: center; flex-direction: column; gap: 6px;
-      background: white; box-shadow: var(--shadow);
-    }
-    .badge-adopted {
-      background: var(--navy); border-radius: var(--radius-lg);
-      padding: 16px 20px; text-align: center; color: white;
-    }
-
-    /* ─── CTA band ────────────────────────────────────────────────────── */
-    .cta-band {
-      background: var(--navy);
-      border-radius: var(--radius-lg);
-      padding: 40px 48px;
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 24px;
-    }
-    .cta-band h2 { color: white; }
-    .cta-band p { color: #a8c0dc; }
-
-    /* ─── Forms ───────────────────────────────────────────────────────── */
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-    .form-group { display: flex; flex-direction: column; gap: 6px; }
-    .form-group label { font-size: 0.82rem; font-weight: 600; color: var(--navy); }
-    .form-control {
-      border: 1.5px solid var(--line); border-radius: var(--radius-sm);
-      padding: 10px 14px; font-size: 0.88rem; font-family: inherit;
-      color: var(--navy); background: white; outline: none;
-      transition: border-color .15s;
-    }
-    .form-control:focus { border-color: var(--teal); }
-    .form-control::placeholder { color: #b0bcc8; }
-    select.form-control { cursor: pointer; }
-    .checkbox-row { display: flex; align-items: flex-start; gap: 10px; font-size: 0.83rem; color: var(--muted); }
-    .checkbox-row input { margin-top: 2px; accent-color: var(--teal); }
-
-    /* Newsletter strip */
-    .newsletter-strip {
-      background: var(--navy); padding: 40px 0;
-    }
-    .newsletter-inner {
-      display: flex; align-items: center; justify-content: space-between; gap: 32px;
-    }
-    .newsletter-left { display: flex; align-items: center; gap: 20px; }
-    .newsletter-icon {
-      width: 48px; height: 48px; border-radius: 50%;
-      background: var(--teal); display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-    .newsletter-form { display: flex; gap: 8px; align-items: center; }
-    .newsletter-input {
-      background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
-      border-radius: var(--radius-sm); padding: 10px 16px;
-      color: white; font-family: inherit; font-size: 0.88rem; outline: none; min-width: 200px;
-    }
-    .newsletter-input::placeholder { color: rgba(255,255,255,.5); }
-    .newsletter-select {
-      background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
-      border-radius: var(--radius-sm); padding: 10px 12px;
-      color: white; font-family: inherit; font-size: 0.85rem; outline: none; cursor: pointer;
-    }
-
-    /* ─── Footer ──────────────────────────────────────────────────────── */
-    footer {
-      background: var(--navy); color: white; padding: 56px 0 32px;
-    }
-    .footer-top {
-      display: grid; grid-template-columns: 200px 1fr; gap: 48px;
-      padding-bottom: 48px; border-bottom: 1px solid rgba(255,255,255,.1);
-      margin-bottom: 32px;
-    }
-    .footer-brand p { color: #7a9bc0; font-size: 0.82rem; margin-top: 12px; }
-    .footer-tagline { font-size: 0.8rem; color: #5a7a9a; margin-top: 6px; }
-    .footer-links-grid {
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px;
-    }
-    .footer-col h5 { font-size: 0.82rem; font-weight: 700; color: white; margin-bottom: 14px; }
-    .footer-col a { display: block; font-size: 0.8rem; color: #7a9bc0; margin-bottom: 8px; }
-    .footer-col a:hover { color: var(--teal); }
-    .footer-bottom {
-      display: flex; align-items: center; justify-content: space-between;
-    }
-    .footer-bottom p { font-size: 0.78rem; color: #5a7a9a; }
-    .social-icons { display: flex; gap: 16px; }
-    .social-icon {
-      width: 32px; height: 32px; border-radius: var(--radius-sm);
-      border: 1px solid rgba(255,255,255,.15); display: flex; align-items: center;
-      justify-content: center; color: #7a9bc0; transition: all .15s;
-    }
-    .social-icon:hover { border-color: var(--teal); color: var(--teal); }
-
-    /* ─── Page routing (SPA) ──────────────────────────────────────────── */
-    .page { display: none; }
-    .page.active { display: block; }
-
-    /* ─── Misc util ───────────────────────────────────────────────────── */
-    .text-center { text-align: center; }
-    .text-teal { color: var(--teal); }
-    .text-navy { color: var(--navy); }
-    .text-white { color: white; }
-    .mt-4 { margin-top: 4px; }
-    .mt-8 { margin-top: 8px; }
-    .mt-12 { margin-top: 12px; }
-    .mt-16 { margin-top: 16px; }
-    .mt-24 { margin-top: 24px; }
-    .mt-32 { margin-top: 32px; }
-    .mb-8  { margin-bottom: 8px; }
-    .mb-16 { margin-bottom: 16px; }
-    .mb-24 { margin-bottom: 24px; }
-    .mb-32 { margin-bottom: 32px; }
-    .fw-600 { font-weight: 600; }
-    .fw-700 { font-weight: 700; }
-
-    /* ─── Breadcrumb ──────────────────────────────────────────────────── */
-    .breadcrumb { font-size: 0.8rem; color: var(--muted); margin-bottom: 24px; display: flex; align-items: center; gap: 6px; }
-    .breadcrumb a { color: var(--muted); }
-    .breadcrumb a:hover { color: var(--teal); }
-
-    /* ─── Page hero band ──────────────────────────────────────────────── */
-    .page-hero {
-      background: linear-gradient(120deg, var(--soft-grey) 0%, white 100%);
-      padding: 56px 0 48px; border-bottom: 1px solid var(--line);
-    }
-
-    /* ─── Partners page ───────────────────────────────────────────────── */
-    .benefit-row { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 20px; }
-    .benefit-num {
-      width: 28px; height: 28px; border-radius: 50%; background: var(--teal);
-      color: white; font-size: 0.78rem; font-weight: 700;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-
-    /* ─── Spec page ───────────────────────────────────────────────────── */
-    .spec-nav { display: flex; flex-direction: column; gap: 2px; }
-    .spec-nav a {
-      display: block; padding: 8px 14px; border-radius: var(--radius-sm);
-      font-size: 0.85rem; color: var(--muted); font-weight: 500;
-    }
-    .spec-nav a:hover, .spec-nav a.active { background: var(--soft-grey); color: var(--navy); }
-    .spec-nav a.active { font-weight: 700; }
-    .spec-body h3 { font-size: 1.1rem; margin: 28px 0 12px; color: var(--navy); }
-    .spec-body p { margin-bottom: 14px; }
-    .code-block {
-      background: #0b1220; color: #e6edf7; border-radius: var(--radius);
-      padding: 20px 24px; font-family: ui-monospace, monospace; font-size: 0.82rem;
-      line-height: 1.7; overflow-x: auto; margin: 16px 0;
-    }
-    .code-block .key { color: #79c0ff; }
-    .code-block .str { color: #a5d6ff; }
-    .code-block .val { color: #56d364; }
-    .code-block .comment { color: #8b949e; }
-
-    /* ─── Animations ──────────────────────────────────────────────────── */
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    .animate-fade-up { animation: fadeUp .5s ease both; }
-    .delay-1 { animation-delay: .1s; }
-    .delay-2 { animation-delay: .2s; }
-    .delay-3 { animation-delay: .3s; }
-
-    /* ─── Responsive ──────────────────────────────────────────────────── */
-    @media (max-width: 900px) {
-      .hero-grid { grid-template-columns: 1fr; }
-      .manifest-card { display: none; }
-      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
-      .footer-links-grid { grid-template-columns: 1fr 1fr; }
-      .footer-top { grid-template-columns: 1fr; }
-      .cta-band { flex-direction: column; text-align: center; }
-      .newsletter-inner { flex-direction: column; gap: 20px; }
-      .steps { flex-direction: column; align-items: center; gap: 24px; }
-      .step-connector { display: none; }
-      .nav-links { display: none; }
-      .nav-mobile-toggle { display: flex; }
-    }
-    @media (max-width: 600px) {
-      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
-      .form-row { grid-template-columns: 1fr; }
-      .footer-links-grid { grid-template-columns: 1fr 1fr; gap: 20px; }
-    }
-
-    /* Mobile nav drawer */
-    .mobile-nav {
-      display: none; position: fixed; top: 64px; left: 0; right: 0; bottom: 0;
-      background: white; z-index: 99; padding: 24px;
-      border-top: 1px solid var(--line); flex-direction: column; gap: 4px;
-    }
-    .mobile-nav.open { display: flex; }
-    .mobile-nav a { padding: 12px 16px; border-radius: var(--radius-sm); font-weight: 600; color: var(--navy); }
-    .mobile-nav a:hover { background: var(--soft-grey); }
-    .toast {
-      position: fixed; bottom: 24px; right: 24px; background: var(--navy); color: white;
-      padding: 14px 20px; border-radius: var(--radius-sm); font-size: 0.88rem;
-      box-shadow: var(--shadow-lg); z-index: 999; animation: fadeUp .3s ease;
-      display: flex; align-items: center; gap: 10px;
-    }
+    :root{--navy:#0B1D3A;--navy2:#102a56;--teal:#00B0A6;--teal2:#008f87;--slate:#E6EEF7;--soft:#F6F8FB;--line:#D0D5DD;--muted:#667085;--ink:#0B1D3A;--white:#fff;--warn:#92400e;--shadow:0 12px 40px rgba(11,29,58,.10);--shadow2:0 4px 18px rgba(11,29,58,.08);--r:16px;--r2:24px}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink);background:#fff;line-height:1.6}a{text-decoration:none;color:inherit}p{color:var(--muted);margin:0 0 14px}h1,h2,h3,h4{margin:0;color:var(--navy);letter-spacing:-.025em;line-height:1.15}h1{font-size:clamp(2.1rem,5vw,4rem);font-weight:850}h2{font-size:clamp(1.6rem,3vw,2.45rem);font-weight:800}h3{font-size:1.18rem;font-weight:750}.container{max-width:1160px;margin:auto;padding:0 24px}.section{padding:82px 0}.section-sm{padding:56px 0}.grid{display:grid;gap:24px}.grid2{grid-template-columns:repeat(2,minmax(0,1fr))}.grid3{grid-template-columns:repeat(3,minmax(0,1fr))}.grid4{grid-template-columns:repeat(4,minmax(0,1fr))}.card{background:#fff;border:1px solid var(--line);border-radius:var(--r2);padding:28px;box-shadow:0 1px 5px rgba(11,29,58,.05)}.card:hover{box-shadow:var(--shadow2);transform:translateY(-1px);transition:.18s}.card.dark{background:var(--navy);border-color:var(--navy2)}.card.dark h3,.card.dark h2{color:#fff}.card.dark p{color:#b8c7da}.card.top{border-top:4px solid var(--teal)}.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #b2ebe9;background:#e0f7f6;color:var(--teal2);border-radius:999px;padding:5px 12px;font-size:.74rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em}.pill.navy{background:#eef2f8;border-color:#c8d4e6;color:var(--navy)}.pill.warn{background:#fff7ed;border-color:#fed7aa;color:#9a3412}.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:10px;padding:12px 20px;font-size:.92rem;font-weight:750;border:1.5px solid transparent;cursor:pointer;white-space:nowrap}.btn.primary{background:var(--navy);color:#fff}.btn.teal{background:var(--teal);color:#fff}.btn.outline{border-color:var(--navy);color:var(--navy);background:#fff}.btn.ghost{border-color:var(--line);background:#fff;color:var(--navy)}.btn:hover{filter:brightness(.97);box-shadow:var(--shadow2)}.btn.small{padding:8px 14px;font-size:.82rem}.muted{color:var(--muted)}.teal{color:var(--teal2)}.label{font-size:.75rem;color:var(--teal2);font-weight:850;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}.line{width:48px;height:3px;background:var(--teal);border-radius:9px;margin:16px auto 0}.centre{text-align:center}.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}.mt24{margin-top:24px}.mt32{margin-top:32px}ul.clean{list-style:none;padding:0;margin:16px 0 0}ul.clean li{position:relative;padding-left:24px;color:var(--muted);font-size:.93rem;margin:9px 0}ul.clean li:before{content:'✓';position:absolute;left:0;color:var(--teal2);font-weight:900}code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}pre{background:#0b1220;color:#e6edf7;padding:20px;border-radius:16px;overflow:auto;font-size:.84rem;line-height:1.65;border:1px solid #1c2a44}.soft{background:var(--soft)}
+    nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}.nav-inner{max-width:1160px;margin:auto;padding:0 24px;height:68px;display:flex;align-items:center;justify-content:space-between}.brand{display:flex;align-items:center;gap:10px}.brand-mark{width:34px;height:34px}.brand-title{font-size:1.18rem;font-weight:900;color:var(--navy);letter-spacing:-.02em}.brand-sub{font-size:.62rem;color:var(--muted);font-weight:650;margin-top:-2px}.nav-links{display:flex;align-items:center;gap:24px}.nav-links a{font-size:.88rem;color:#344054;font-weight:650}.nav-links a:hover{color:var(--teal2)}.nav-toggle{display:none;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px}.mobile{display:none;position:fixed;top:68px;left:0;right:0;background:#fff;border-bottom:1px solid var(--line);padding:12px 24px;z-index:49}.mobile.open{display:block}.mobile a{display:block;padding:11px 8px;font-weight:750;color:var(--navy)}
+    .hero{background:linear-gradient(160deg,#f0f5ff 0%,#fff 62%);padding:74px 0 64px;overflow:hidden;position:relative}.hero:after{content:'';position:absolute;right:-130px;top:-110px;width:580px;height:580px;background:radial-gradient(circle,rgba(0,176,166,.08),transparent 70%)}.hero-grid{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:56px;align-items:center;position:relative;z-index:1}.hero p{font-size:1.08rem;max-width:560px}.manifest{background:#fff;border:1px solid var(--line);border-radius:24px;padding:24px;box-shadow:var(--shadow)}.manifest-row{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--slate);padding:14px 0}.manifest-row:last-child{border-bottom:0}.manifest-left{display:flex;gap:12px;align-items:center}.icon{width:42px;height:42px;border-radius:12px;background:#e0f7f6;color:var(--teal2);display:flex;align-items:center;justify-content:center;font-weight:900}.icon.navy{background:#eef2f8;color:var(--navy)}.smalltxt{font-size:.78rem;color:var(--muted)}
+    .page{display:none}.page.active{display:block}.page-hero{padding:54px 0 46px;background:linear-gradient(120deg,var(--soft),#fff);border-bottom:1px solid var(--line)}.breadcrumb{font-size:.82rem;color:var(--muted);margin-bottom:20px}.side-layout{display:grid;grid-template-columns:240px minmax(0,1fr);gap:44px;align-items:start}.side-nav{position:sticky;top:88px}.side-nav a{display:block;padding:10px 14px;border-radius:10px;color:var(--muted);font-size:.9rem;font-weight:700}.side-nav a:hover,.side-nav a.active{background:var(--soft);color:var(--navy)}.spec-block{display:none}.spec-block.active{display:block}.table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden}.table th,.table td{border-bottom:1px solid var(--line);padding:13px;text-align:left;vertical-align:top}.table th{background:#f8fafc;color:var(--navy);font-size:.86rem}.table td{color:var(--muted);font-size:.9rem}.status{display:inline-flex;padding:4px 10px;border-radius:999px;font-size:.72rem;font-weight:850}.status.certified{background:#e0f7f6;color:#007c75}.status.adopted{background:#eef2f8;color:var(--navy)}.status.progress{background:#fff7ed;color:#9a3412}.filterbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:26px}.form{display:grid;gap:14px}.form input,.form select,.form textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:12px 13px;font-family:inherit;font-size:.94rem}.form textarea{min-height:130px}.result{margin-top:16px;padding:16px;border-radius:14px;font-weight:700;white-space:pre-wrap}.ok{background:#e0f7f6;color:#007c75;border:1px solid #b2ebe9}.bad{background:#fff1f1;color:#9b1c1c;border:1px solid #ffcccc}.warnbox{background:#fff8e1;color:#7a5200;border:1px solid #f5d46b}.cta{background:var(--navy);border-radius:24px;padding:40px 46px;display:flex;align-items:center;justify-content:space-between;gap:24px}.cta h2{color:#fff}.cta p{color:#b8c7da}footer{background:var(--navy);padding:48px 0 30px;color:#fff}footer p,footer a{color:#8ea8c7}.footer-grid{display:grid;grid-template-columns:220px 1fr;gap:44px;padding-bottom:34px;border-bottom:1px solid rgba(255,255,255,.12)}.footer-links{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}footer h4{color:#fff;font-size:.9rem;margin-bottom:10px}footer a{display:block;margin:7px 0;font-size:.84rem}.toast{display:none;position:fixed;right:22px;bottom:22px;background:var(--navy);color:#fff;border-radius:12px;padding:14px 18px;box-shadow:var(--shadow);z-index:100}
+    @media(max-width:900px){.hero-grid,.side-layout,.footer-grid{grid-template-columns:1fr}.manifest{display:none}.grid2,.grid3,.grid4{grid-template-columns:1fr 1fr}.nav-links{display:none}.nav-toggle{display:block}.cta{flex-direction:column;text-align:center}.side-nav{position:static;display:flex;overflow:auto;gap:8px}.side-nav a{white-space:nowrap}.footer-links{grid-template-columns:1fr 1fr}}@media(max-width:620px){.grid2,.grid3,.grid4{grid-template-columns:1fr}.container{padding:0 18px}.hero{padding-top:48px}.section{padding:58px 0}.nav-inner{padding:0 18px}.btn{width:100%;}.nav-inner .btn{width:auto}.footer-links{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
-
-<!-- ═══════════════════════════════════════════════════════ NAV ═══ -->
 <nav>
   <div class="nav-inner">
-    <a href="#" class="nav-logo" onclick="showPage('home')">
-      <!-- Inline SVG logo: icon mark + wordmark -->
-      <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <!-- Document shape -->
-        <rect x="3" y="1" width="21" height="27" rx="2.5" fill="white" stroke="#0B1D3A" stroke-width="1.5"/>
-        <path d="M20 1l4 4h-4V1z" fill="#E6EEF7" stroke="#0B1D3A" stroke-width="1.5" stroke-linejoin="round"/>
-        <!-- Source rows -->
-        <rect x="6.5" y="8" width="5" height="3.5" rx="1" fill="#E6EEF7" stroke="#0B1D3A" stroke-width=".8"/>
-        <rect x="6.5" y="13.5" width="5" height="3.5" rx="1" fill="#E6EEF7" stroke="#0B1D3A" stroke-width=".8"/>
-        <rect x="6.5" y="19" width="5" height="3.5" rx="1" fill="#E6EEF7" stroke="#0B1D3A" stroke-width=".8"/>
-        <!-- Provenance path -->
-        <circle cx="14" cy="9.75" r="2" fill="white" stroke="#00B0A6" stroke-width="1.5"/>
-        <circle cx="16" cy="15.25" r="2" fill="#0B1D3A" stroke="#0B1D3A" stroke-width="1"/>
-        <circle cx="14" cy="20.75" r="2" fill="white" stroke="#60A5FA" stroke-width="1.5"/>
-        <line x1="14.5" y1="11.5" x2="15.5" y2="13.5" stroke="#00B0A6" stroke-width="1.2"/>
-        <line x1="15.5" y1="17" x2="14.5" y2="19" stroke="#0B1D3A" stroke-width="1.2" stroke-dasharray="2 2"/>
-        <!-- Shield -->
-        <path d="M21 22.5c0 0 5-1.5 5 2.5s-5 5.5-5 5.5-5-1.5-5-5.5 5-2.5 5-2.5z" fill="#00B0A6" stroke="#00B0A6" stroke-width=".5"/>
-        <path d="M18.5 25.5l1.5 1.5 3-3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <div class="logo-text-group">
-        <span class="logo-airpp" style="font-size:1.2rem;font-weight:800;color:#0B1D3A;letter-spacing:-.02em;">AIRPP</span>
-        <span class="logo-tagline">AI Record Provenance Protocol</span>
-      </div>
+    <a class="brand" href="#home" onclick="showPage('home')" aria-label="AIRPP home">
+      <svg class="brand-mark" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="1" width="21" height="27" rx="2.5" fill="white" stroke="#0B1D3A" stroke-width="1.5"/><path d="M20 1l4 4h-4V1z" fill="#E6EEF7" stroke="#0B1D3A" stroke-width="1.5" stroke-linejoin="round"/><circle cx="14" cy="9.75" r="2" fill="white" stroke="#00B0A6" stroke-width="1.5"/><circle cx="16" cy="15.25" r="2" fill="#0B1D3A"/><circle cx="14" cy="20.75" r="2" fill="white" stroke="#60A5FA" stroke-width="1.5"/><path d="M21 22.5c0 0 5-1.5 5 2.5s-5 5.5-5 5.5-5-1.5-5-5.5 5-2.5 5-2.5z" fill="#00B0A6"/><path d="M18.5 25.5l1.5 1.5 3-3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span><span class="brand-title">AIRPP</span><br><span class="brand-sub">AI Record Provenance Protocol</span></span>
     </a>
-
     <div class="nav-links">
-      <a href="#" onclick="showPage('home')">About</a>
-      <a href="#" onclick="showPage('spec')">Specification</a>
-      <a href="#" onclick="showPage('registry')">Registry</a>
-      <a href="#" onclick="showPage('partners')">Partners</a>
-      <a href="#" onclick="showPage('support')">Support</a>
+      <a href="#about" onclick="showPage('home')">About</a>
+      <a href="#spec" onclick="showPage('spec')">Specification</a>
+      <a href="#validator" onclick="showPage('validator')">Validator</a>
+      <a href="#registry" onclick="showPage('registry')">Registry</a>
+      <a href="#partners" onclick="showPage('partners')">Partners</a>
+      <a href="#support" onclick="showPage('support')">Support</a>
+      <a href="#join" onclick="showPage('join')" class="btn teal small">Join AIRPP →</a>
     </div>
-
-    <div class="nav-right">
-      <a href="#" class="btn btn-teal btn-sm arrow" onclick="showPage('join')">Join AIRPP</a>
-      <div class="nav-mobile-toggle" onclick="toggleMobileNav()">
-        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect y="3" width="22" height="2" rx="1" fill="#0B1D3A"/><rect y="10" width="22" height="2" rx="1" fill="#0B1D3A"/><rect y="17" width="22" height="2" rx="1" fill="#0B1D3A"/></svg>
-      </div>
-    </div>
+    <button class="nav-toggle" onclick="toggleMobile()">☰</button>
   </div>
 </nav>
-
-<div class="mobile-nav" id="mobileNav">
-  <a href="#" onclick="showPage('home');toggleMobileNav()">About</a>
-  <a href="#" onclick="showPage('spec');toggleMobileNav()">Specification</a>
-  <a href="#" onclick="showPage('registry');toggleMobileNav()">Registry</a>
-  <a href="#" onclick="showPage('partners');toggleMobileNav()">Partners</a>
-  <a href="#" onclick="showPage('support');toggleMobileNav()">Support</a>
-  <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
-    <a href="#" class="btn btn-teal" style="display:inline-flex" onclick="showPage('join');toggleMobileNav()">Join AIRPP →</a>
-  </div>
+<div id="mobile" class="mobile">
+  <a href="#about" onclick="showPage('home');toggleMobile()">About</a>
+  <a href="#spec" onclick="showPage('spec');toggleMobile()">Specification</a>
+  <a href="#validator" onclick="showPage('validator');toggleMobile()">Validator</a>
+  <a href="#registry" onclick="showPage('registry');toggleMobile()">Registry</a>
+  <a href="#partners" onclick="showPage('partners');toggleMobile()">Partners</a>
+  <a href="#support" onclick="showPage('support');toggleMobile()">Support</a>
+  <a href="#join" onclick="showPage('join');toggleMobile()">Join AIRPP</a>
 </div>
 
-<!-- ══════════════════════════════════════════════ HOME PAGE ═════ -->
-<div id="page-home" class="page active">
-
-  <!-- Hero -->
-  <section class="hero">
-    <div class="container">
-      <div class="hero-grid">
-        <div class="animate-fade-up">
-          <div class="hero-badges">
-            <span class="pill pill-teal">Open · Vendor-Neutral · Auditable</span>
-          </div>
-          <h1 class="hero-title">Portable provenance<br>for AI-assisted work</h1>
-          <p class="hero-sub">AIRPP is an open-source initiative that brings provenance, accountability, and auditability to AI-assisted records — so trust travels with your work.</p>
-          <div class="hero-ctas">
-            <a href="#" class="btn btn-primary btn-lg arrow" onclick="showPage('join')">Get Started</a>
-            <a href="#" class="btn btn-outline btn-lg" onclick="showPage('spec')">
-              <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="2" y="1" width="12" height="14" rx="1.5" stroke="currentColor" stroke-width="1.4"/><line x1="5" y1="5" x2="11" y2="5" stroke="currentColor" stroke-width="1.2"/><line x1="5" y1="8" x2="11" y2="8" stroke="currentColor" stroke-width="1.2"/><line x1="5" y1="11" x2="8" y2="11" stroke="currentColor" stroke-width="1.2"/></svg>
-              Read the Spec
-            </a>
-          </div>
-          <div class="hero-audience">
-            <div class="hero-audience-item">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="4" r="2.5" stroke="#00B0A6" stroke-width="1.3"/><path d="M2 12c0-2.761 2.239-5 5-5s5 2.239 5 5" stroke="#00B0A6" stroke-width="1.3" stroke-linecap="round"/></svg>
-              Users
-            </div>
-            <div class="hero-audience-item">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="2" width="10" height="10" rx="2" stroke="#00B0A6" stroke-width="1.3"/><path d="M5 7h4M7 5v4" stroke="#00B0A6" stroke-width="1.3" stroke-linecap="round"/></svg>
-              Vendors
-            </div>
-            <div class="hero-audience-item">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2l1.5 3h3l-2.5 2 1 3L7 8.5 4 10l1-3L2.5 5h3z" stroke="#00B0A6" stroke-width="1.2" stroke-linejoin="round"/></svg>
-              Partners
-            </div>
-            <div class="hero-audience-item">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2c0 0 5 1.5 5 4.5s-5 6-5 6-5-3-5-6 5-4.5 5-4.5z" stroke="#00B0A6" stroke-width="1.3" stroke-linejoin="round"/></svg>
-              Regulated Teams
-            </div>
-          </div>
-        </div>
-
-        <!-- Manifest preview card -->
-        <div class="manifest-card animate-fade-up delay-2">
-          <div class="manifest-logo-row">
-            <svg width="28" height="28" viewBox="0 0 34 34" fill="none"><rect x="3" y="1" width="21" height="27" rx="2.5" fill="white" stroke="#0B1D3A" stroke-width="1.5"/><path d="M20 1l4 4h-4V1z" fill="#E6EEF7" stroke="#0B1D3A" stroke-width="1.5" stroke-linejoin="round"/><rect x="6.5" y="8" width="5" height="3.5" rx="1" fill="#E6EEF7" stroke="#0B1D3A" stroke-width=".8"/><rect x="6.5" y="13.5" width="5" height="3.5" rx="1" fill="#E6EEF7" stroke="#0B1D3A" stroke-width=".8"/><rect x="6.5" y="19" width="5" height="3.5" rx="1" fill="#E6EEF7" stroke="#0B1D3A" stroke-width=".8"/><circle cx="14" cy="9.75" r="2" fill="white" stroke="#00B0A6" stroke-width="1.5"/><circle cx="16" cy="15.25" r="2" fill="#0B1D3A" stroke="#0B1D3A" stroke-width="1"/><circle cx="14" cy="20.75" r="2" fill="white" stroke="#60A5FA" stroke-width="1.5"/><line x1="14.5" y1="11.5" x2="15.5" y2="13.5" stroke="#00B0A6" stroke-width="1.2"/><line x1="15.5" y1="17" x2="14.5" y2="19" stroke="#0B1D3A" stroke-width="1.2" stroke-dasharray="2 2"/><path d="M21 22.5c0 0 5-1.5 5 2.5s-5 5.5-5 5.5-5-1.5-5-5.5 5-2.5 5-2.5z" fill="#00B0A6"/><path d="M18.5 25.5l1.5 1.5 3-3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <span style="font-weight:800;font-size:1.1rem;color:var(--navy);">AIRPP</span>
-            <svg style="margin-left:auto" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2c0 0 6 2 6 5.5s-6 8-6 8-6-4.5-6-8S10 2 10 2z" stroke="#00B0A6" stroke-width="1.5" fill="none"/><path d="M7 10l2 2 4-4" stroke="#00B0A6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-          <div class="manifest-id-row">
-            <span class="manifest-id">airpp://8f3a…9c2e</span>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="4" width="8" height="8" rx="1.2" stroke="#667085" stroke-width="1.2"/><path d="M4 4V3a3 3 0 016 0v1" stroke="#667085" stroke-width="1.2" stroke-linecap="round"/></svg>
-            <span class="badge-verified" style="margin-left:auto">Verified</span>
-          </div>
-          <div class="manifest-row">
-            <div class="manifest-row-left">
-              <div class="manifest-row-icon">
-                <svg width="18" height="18" fill="none" viewBox="0 0 18 18"><rect x="2" y="1.5" width="14" height="15" rx="2" stroke="#0B1D3A" stroke-width="1.3"/><line x1="5" y1="6" x2="13" y2="6" stroke="#667085" stroke-width="1.1"/><line x1="5" y1="9" x2="11" y2="9" stroke="#667085" stroke-width="1.1"/></svg>
-              </div>
-              <div>
-                <div class="manifest-row-label">Manifest</div>
-                <div class="manifest-row-sub">Structured metadata about the record</div>
-              </div>
-            </div>
-            <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M6 4l4 4-4 4" stroke="#667085" stroke-width="1.4" stroke-linecap="round"/></svg>
-          </div>
-          <div class="manifest-row">
-            <div class="manifest-row-left">
-              <div class="manifest-row-icon">
-                <svg width="18" height="18" fill="none" viewBox="0 0 18 18"><path d="M9 2c0 0 6 1.5 6 5s-6 8-6 8-6-4.5-6-8 6-5 6-5z" stroke="#00B0A6" stroke-width="1.3" fill="none"/><path d="M6.5 9l2 2 3.5-3.5" stroke="#00B0A6" stroke-width="1.3" stroke-linecap="round"/></svg>
-              </div>
-              <div>
-                <div class="manifest-row-label">Verification</div>
-                <div class="manifest-row-sub">Cryptographic integrity &amp; sources</div>
-              </div>
-            </div>
-            <span class="manifest-status status-valid">Valid ✓</span>
-          </div>
-          <div class="manifest-row">
-            <div class="manifest-row-left">
-              <div class="manifest-row-icon">
-                <svg width="18" height="18" fill="none" viewBox="0 0 18 18"><circle cx="9" cy="6" r="3" stroke="#0B1D3A" stroke-width="1.3"/><path d="M3 16c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="#0B1D3A" stroke-width="1.3" stroke-linecap="round"/></svg>
-              </div>
-              <div>
-                <div class="manifest-row-label">Review</div>
-                <div class="manifest-row-sub">Human review &amp; sign-offs</div>
-              </div>
-            </div>
-            <span class="manifest-status status-reviewed">Reviewed</span>
-          </div>
-          <div class="manifest-row">
-            <div class="manifest-row-left">
-              <div class="manifest-row-icon">
-                <svg width="18" height="18" fill="none" viewBox="0 0 18 18"><path d="M4 14v-4M9 14V7M14 14V4" stroke="#0B1D3A" stroke-width="1.3" stroke-linecap="round"/></svg>
-              </div>
-              <div>
-                <div class="manifest-row-label">Export</div>
-                <div class="manifest-row-sub">Portable package (JSON-LD)</div>
-              </div>
-            </div>
-            <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M6 4l4 4-4 4" stroke="#667085" stroke-width="1.4" stroke-linecap="round"/></svg>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Why AIRPP -->
-  <section class="section" style="background:var(--white)">
-    <div class="container">
-      <div class="section-header">
-        <p class="section-label">Why AIRPP</p>
-        <h2>Built for trust in AI-assisted work</h2>
-        <div class="teal-line"></div>
-      </div>
-      <div class="grid-4">
-        <div class="card card-teal text-center">
-          <div class="feature-icon teal-bg" style="margin:0 auto 16px">
-            <svg width="22" height="22" fill="none" viewBox="0 0 22 22"><rect x="2" y="2" width="18" height="18" rx="3" stroke="#00B0A6" stroke-width="1.5"/><path d="M7 11l3 3 5-5" stroke="#00B0A6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-          <h3>Vendor-neutral</h3>
-          <p class="mt-8" style="font-size:.85rem">Open standard that works across tools, models and platforms. No lock-in.</p>
-        </div>
-        <div class="card card-teal text-center">
-          <div class="feature-icon teal-bg" style="margin:0 auto 16px">
-            <svg width="22" height="22" fill="none" viewBox="0 0 22 22"><rect x="3" y="1.5" width="16" height="19" rx="2.5" stroke="#00B0A6" stroke-width="1.5"/><line x1="7" y1="7" x2="15" y2="7" stroke="#00B0A6" stroke-width="1.3"/><line x1="7" y1="11" x2="15" y2="11" stroke="#00B0A6" stroke-width="1.3"/><line x1="7" y1="15" x2="11" y2="15" stroke="#00B0A6" stroke-width="1.3"/></svg>
-          </div>
-          <h3>Audit-ready</h3>
-          <p class="mt-8" style="font-size:.85rem">Built for accountability with verifiable provenance and tamper-evident records.</p>
-        </div>
-        <div class="card card-teal text-center">
-          <div class="feature-icon teal-bg" style="margin:0 auto 16px">
-            <svg width="22" height="22" fill="none" viewBox="0 0 22 22"><circle cx="11" cy="7" r="3.5" stroke="#00B0A6" stroke-width="1.5"/><path d="M4 19c0-3.866 3.134-7 7-7h0c3.866 0 7 3.134 7 7" stroke="#00B0A6" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </div>
-          <h3>Human-reviewed</h3>
-          <p class="mt-8" style="font-size:.85rem">Places human judgement at the centre of trustworthy AI-assisted work.</p>
-        </div>
-        <div class="card card-teal text-center">
-          <div class="feature-icon teal-bg" style="margin:0 auto 16px">
-            <svg width="22" height="22" fill="none" viewBox="0 0 22 22"><path d="M6 6h2v10H6zm8 0h2v10h-2zM8 11h6" stroke="#00B0A6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-          <h3>Machine-readable</h3>
-          <p class="mt-8" style="font-size:.85rem">Structured, interoperable, and future-proof by design (JSON-LD).</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Who it's for -->
-  <section class="section" style="background:var(--soft-grey)">
-    <div class="container">
-      <div class="section-header">
-        <p class="section-label">Who it's for</p>
-        <h2>One protocol. Every role.</h2>
-        <div class="teal-line"></div>
-      </div>
-      <div class="grid-4">
-        <div class="role-card">
-          <div class="role-icon">
-            <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4" stroke="#0B1D3A" stroke-width="1.5"/><path d="M4 20c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke="#0B1D3A" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </div>
-          <h3>Users</h3>
-          <p style="font-size:.85rem">Create, review, and share AI-assisted records with confidence and clarity.</p>
-          <ul class="check-list">
-            <li>Verify provenance and trust</li>
-            <li>Understand how records were created</li>
-            <li>Make confident decisions</li>
-          </ul>
-          <a href="#" class="btn btn-teal btn-sm arrow mt-12" onclick="showPage('join')">Sign up as a User</a>
-        </div>
-        <div class="role-card">
-          <div class="role-icon">
-            <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3" stroke="#0B1D3A" stroke-width="1.5"/><path d="M9 12h6M12 9v6" stroke="#0B1D3A" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </div>
-          <h3>Vendors</h3>
-          <p style="font-size:.85rem">Integrate AIRPP to deliver verifiable, interoperable experiences.</p>
-          <ul class="check-list">
-            <li>Integrate AIRPP into your products</li>
-            <li>Improve transparency and customer trust</li>
-            <li>Align with an open standard</li>
-          </ul>
-          <a href="#" class="btn btn-primary btn-sm arrow mt-12" onclick="showPage('join')">Sign up as a Vendor</a>
-        </div>
-        <div class="role-card">
-          <div class="role-icon">
-            <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><circle cx="9" cy="7" r="3" stroke="#0B1D3A" stroke-width="1.5"/><circle cx="17" cy="9" r="2.5" stroke="#0B1D3A" stroke-width="1.5"/><path d="M2 19c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="#0B1D3A" stroke-width="1.5" stroke-linecap="round"/><path d="M17 14c2.21 0 4 1.79 4 4" stroke="#0B1D3A" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </div>
-          <h3>Partners</h3>
-          <p style="font-size:.85rem">Certify, build, and grow a trusted ecosystem together.</p>
-          <ul class="check-list">
-            <li>Offer AIRPP-aligned solutions</li>
-            <li>Get certified and listed in the registry</li>
-            <li>Grow the ecosystem together</li>
-          </ul>
-          <a href="#" class="btn btn-outline btn-sm arrow mt-12" onclick="showPage('join')">Sign up as a Partner</a>
-        </div>
-        <div class="role-card">
-          <div class="role-icon">
-            <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M12 4c0 0 7 2 7 7s-7 10-7 10S5 16 5 11s7-7 7-7z" stroke="#0B1D3A" stroke-width="1.5" fill="none"/><path d="M9 12l2 2 4-4" stroke="#0B1D3A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-          <h3>Regulated Teams</h3>
-          <p style="font-size:.85rem">Meet compliance and governance needs with portable provenance.</p>
-          <ul class="check-list">
-            <li>Support open governance</li>
-            <li>Enable community and adoption</li>
-            <li>Drive global impact</li>
-          </ul>
-          <a href="#" class="btn btn-ghost btn-sm arrow mt-12" onclick="showPage('join')">Support the Mission</a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- How adoption works -->
-  <section class="section">
-    <div class="container">
-      <div class="section-header">
-        <p class="section-label">How adoption works</p>
-        <h2>Four steps to trusted AI records</h2>
-        <div class="teal-line"></div>
-      </div>
-      <div class="steps">
-        <div class="step">
-          <div class="step-icon-wrap">
-            <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 8h8M8 12h8M8 16h5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="16" cy="18" r="3" fill="currentColor" fill-opacity=".15" stroke="currentColor" stroke-width="1.3"/><path d="M15 18l1 1 2-2" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
-          </div>
-          <div class="step-connector"></div>
-          <div class="step-label">Create</div>
-          <div class="step-sub">Generate AI-assisted content and capture provenance</div>
-        </div>
-        <div class="step">
-          <div class="step-icon-wrap">
-            <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><circle cx="9" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/><circle cx="17" cy="9" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M2 19c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </div>
-          <div class="step-connector"></div>
-          <div class="step-label">Review</div>
-          <div class="step-sub">Human review, edits, and approvals are recorded</div>
-        </div>
-        <div class="step">
-          <div class="step-icon-wrap">
-            <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M12 3c0 0 7 2 7 7s-7 10-7 10S5 15 5 10 12 3 12 3z" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M9 11l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-          <div class="step-connector"></div>
-          <div class="step-label">Verify</div>
-          <div class="step-sub">Integrity checks ensure authenticity and traceability</div>
-        </div>
-        <div class="step">
-          <div class="step-icon-wrap">
-            <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M12 3v12M8 11l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </div>
-          <div class="step-label">Export</div>
-          <div class="step-sub">Export a portable AIRPP package that travels with your record</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Trust & badges -->
-  <section class="section-sm" style="background:var(--soft-grey)">
-    <div class="container">
-      <div style="display:grid;grid-template-columns:1fr auto auto;gap:48px;align-items:center">
+<main>
+  <section id="page-home" class="page active">
+    <div class="hero">
+      <div class="container hero-grid">
         <div>
-          <h2>An ecosystem built on trust</h2>
-          <p class="mt-12">Certified partners and adopted users help drive an open, interoperable future for AI-assisted records.</p>
-          <a href="#" class="btn btn-outline mt-24 arrow" onclick="showPage('registry')">View the Registry</a>
+          <span class="pill">Open · Vendor-neutral · Auditable</span>
+          <h1 class="mt24">Portable provenance for AI-assisted work</h1>
+          <p class="mt24">AIRPP is an open-source initiative for recording how AI-assisted records are created, reviewed, verified and exported. The aim is simple: trust should travel with the record, not remain trapped inside a product, platform or vendor account.</p>
+          <div class="mt24" style="display:flex;gap:12px;flex-wrap:wrap"><a class="btn primary" href="#join" onclick="showPage('join')">Get started →</a><a class="btn outline" href="#spec" onclick="showPage('spec')">Read the spec</a><a class="btn ghost" href="#validator" onclick="showPage('validator')">Try the validator</a></div>
+          <div class="mt24" style="display:flex;gap:18px;flex-wrap:wrap;color:var(--muted);font-size:.86rem"><span>Users</span><span>Vendors</span><span>Partners</span><span>Regulated teams</span><span>Auditors</span></div>
         </div>
-        <div style="text-align:center">
-          <div class="badge-ring">
-            <svg width="28" height="28" viewBox="0 0 34 34" fill="none"><rect x="3" y="1" width="21" height="27" rx="2.5" fill="white" stroke="#0B1D3A" stroke-width="1.5"/><path d="M20 1l4 4h-4V1z" fill="#E6EEF7" stroke="#0B1D3A" stroke-width="1.5" stroke-linejoin="round"/><rect x="6.5" y="8" width="5" height="3.5" rx="1" fill="#E6EEF7" stroke="#0B1D3A" stroke-width=".8"/><rect x="6.5" y="13.5" width="5" height="3.5" rx="1" fill="#E6EEF7" stroke="#0B1D3A" stroke-width=".8"/><rect x="6.5" y="19" width="5" height="3.5" rx="1" fill="#E6EEF7" stroke="#0B1D3A" stroke-width=".8"/><circle cx="14" cy="9.75" r="2" fill="white" stroke="#00B0A6" stroke-width="1.5"/><circle cx="16" cy="15.25" r="2" fill="#0B1D3A" stroke="#0B1D3A" stroke-width="1"/><circle cx="14" cy="20.75" r="2" fill="white" stroke="#60A5FA" stroke-width="1.5"/><path d="M21 22.5c0 0 5-1.5 5 2.5s-5 5.5-5 5.5-5-1.5-5-5.5 5-2.5 5-2.5z" fill="#00B0A6"/><path d="M18.5 25.5l1.5 1.5 3-3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <span style="font-size:.72rem;font-weight:700;color:var(--navy);text-align:center;line-height:1.3">AIRPP Certified<br>Partner</span>
-          </div>
-          <div class="caption mt-8">Certified Partner</div>
-        </div>
-        <div style="text-align:center">
-          <div class="badge-adopted">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;justify-content:center">
-              <svg width="22" height="22" viewBox="0 0 34 34" fill="none"><rect x="3" y="1" width="21" height="27" rx="2.5" fill="white" stroke="#E6EEF7" stroke-width="1.5"/><path d="M21 22.5c0 0 5-1.5 5 2.5s-5 5.5-5 5.5-5-1.5-5-5.5 5-2.5 5-2.5z" fill="#00B0A6"/><path d="M18.5 25.5l1.5 1.5 3-3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span style="font-weight:800;color:white;font-size:.95rem">AIRPP</span>
-            </div>
-            <div style="background:var(--teal);border-radius:var(--radius-sm);padding:8px 16px;display:inline-flex;align-items:center;gap:8px">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1c0 0 5 1.5 5 4s-5 7-5 7-5-4.5-5-7 5-4 5-4z" fill="white"/></svg>
-              <span style="font-weight:800;color:white;font-size:.85rem">Adopted User</span>
-            </div>
-          </div>
-          <div class="caption mt-8">Adopted User</div>
+        <div class="manifest">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><strong style="font-size:1.15rem">AIRPP Manifest</strong><span class="status certified">Verified</span></div>
+          <p><code>airpp://8f3a…9c2e</code></p>
+          <div class="manifest-row"><div class="manifest-left"><div class="icon navy">M</div><div><strong>Manifest</strong><div class="smalltxt">Structured provenance metadata</div></div></div><span>›</span></div>
+          <div class="manifest-row"><div class="manifest-left"><div class="icon">✓</div><div><strong>Verification</strong><div class="smalltxt">Hash, sources and integrity</div></div></div><span class="teal">Valid</span></div>
+          <div class="manifest-row"><div class="manifest-left"><div class="icon navy">H</div><div><strong>Human review</strong><div class="smalltxt">Reviewer sign-off retained</div></div></div><span>Reviewed</span></div>
+          <div class="manifest-row"><div class="manifest-left"><div class="icon navy">↧</div><div><strong>Export</strong><div class="smalltxt">Portable JSON package</div></div></div><span>›</span></div>
         </div>
       </div>
     </div>
+    <div class="section">
+      <div class="container">
+        <div class="centre"><div class="label">Why AIRPP</div><h2>Built for trust in AI-assisted records</h2><div class="line"></div></div>
+        <div class="grid grid4 mt32">
+          <div class="card top centre"><div class="icon" style="margin:0 auto 18px">✓</div><h3>Vendor-neutral</h3><p class="mt12">Designed to work across models, software tools, organisations and document types without forcing users into one product ecosystem.</p></div>
+          <div class="card top centre"><div class="icon" style="margin:0 auto 18px">A</div><h3>Audit-ready</h3><p class="mt12">Records the responsible human, sources, AI involvement, review status and integrity information needed for later scrutiny.</p></div>
+          <div class="card top centre"><div class="icon" style="margin:0 auto 18px">H</div><h3>Human-reviewed</h3><p class="mt12">Makes human responsibility explicit. AIRPP does not let AI-generated material float around without accountability.</p></div>
+          <div class="card top centre"><div class="icon" style="margin:0 auto 18px">J</div><h3>Machine-readable</h3><p class="mt12">Uses structured JSON so provenance can be validated, exported, archived, exchanged and inspected by other systems.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="section soft">
+      <div class="container">
+        <div class="centre"><div class="label">How it works</div><h2>A simple chain of accountability</h2><div class="line"></div></div>
+        <div class="grid grid4 mt32">
+          <div class="card"><span class="pill navy">1 Create</span><h3 class="mt16">Capture the record</h3><p>The document, content block, report, code output or decision record is assigned an AIRPP manifest ID.</p></div>
+          <div class="card"><span class="pill navy">2 Record</span><h3 class="mt16">Log AI involvement</h3><p>The manifest records the model/tool involvement level, source material and generation events.</p></div>
+          <div class="card"><span class="pill navy">3 Review</span><h3 class="mt16">Attach human judgement</h3><p>Review events show who checked the output, what was changed, and whether responsibility was accepted.</p></div>
+          <div class="card"><span class="pill navy">4 Verify</span><h3 class="mt16">Export and validate</h3><p>The manifest can be validated in-browser today and later through a live API or MCP server.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="section-sm"><div class="container"><div class="cta"><div><h2>Try the first public utility.</h2><p class="mt8">The browser-only AIRPP validator checks a basic manifest without an API, account or database.</p></div><a class="btn teal" href="#validator" onclick="showPage('validator')">Open validator →</a></div></div></div>
   </section>
 
-  <!-- Support section -->
-  <section class="section">
-    <div class="container">
-      <div class="cta-band">
-        <div>
-          <h2>Support the open standard</h2>
-          <p class="mt-8">AIRPP is a community-led, open-source initiative. Your support funds development, tooling, and accessibility for all.</p>
-        </div>
-        <div style="display:flex;gap:12px;flex-shrink:0">
-          <a href="#" class="btn btn-teal btn-lg" onclick="showPage('join')">
-            <svg width="18" height="18" fill="none" viewBox="0 0 18 18"><path d="M9 14.5S2 10.5 2 6a4 4 0 017-2.646A4 4 0 0116 6c0 4.5-7 8.5-7 8.5z" stroke="white" stroke-width="1.4" fill="none"/></svg>
-            Donate
-          </a>
-          <a href="#" class="btn btn-outline btn-lg" style="color:white;border-color:rgba(255,255,255,.3)" onclick="showPage('partners')">
-            <svg width="18" height="18" fill="none" viewBox="0 0 18 18"><circle cx="7" cy="6" r="2.5" stroke="white" stroke-width="1.3"/><circle cx="13" cy="8" r="2" stroke="white" stroke-width="1.3"/><path d="M2 15c0-2.761 2.239-5 5-5s5 2.239 5 5" stroke="white" stroke-width="1.3" stroke-linecap="round"/><path d="M13 12c1.657 0 3 1.343 3 3" stroke="white" stroke-width="1.3" stroke-linecap="round"/></svg>
-            Become a Sponsor
-          </a>
-        </div>
-      </div>
-    </div>
+  <section id="page-spec" class="page">
+    <div class="page-hero"><div class="container"><div class="breadcrumb"><a href="#home" onclick="showPage('home')">Home</a> › Specification</div><div class="label">Technical specification</div><h1 style="font-size:2.4rem">AIRPP v0.3 Public Draft</h1><p class="mt16" style="max-width:780px">A lightweight, implementation-first specification for portable AI record provenance. This page is deliberately written for vendors, auditors, technical teams and governance reviewers.</p><div class="mt16"><span class="pill">Open-source initiative</span> <span class="pill navy">JSON manifest</span> <span class="pill navy">No API required for basic use</span></div></div></div>
+    <div class="section"><div class="container side-layout"><aside class="side-nav"><a class="active" onclick="specTab('overview',this)">Overview</a><a onclick="specTab('data',this)">Data model</a><a onclick="specTab('levels',this)">Conformance</a><a onclick="specTab('integrity',this)">Integrity</a><a onclick="specTab('mcp',this)">MCP / API path</a><a onclick="specTab('roadmap',this)">Roadmap</a></aside><div>
+      <div id="spec-overview" class="spec-block active"><h2>Purpose</h2><p class="mt16">AIRPP defines a portable provenance layer for AI-assisted records. It does not attempt to certify truth by itself. It records the lineage, human accountability and verification state of a record so that another person, organisation or system can understand how the record came into existence.</p><div class="grid grid3 mt24"><div class="card"><h3>Record</h3><p>A document, report, code artefact, decision note, image description, policy draft, financial schedule or other output.</p></div><div class="card"><h3>Manifest</h3><p>A structured JSON file that travels alongside the record and describes AI involvement, actors, sources and review state.</p></div><div class="card"><h3>Verifier</h3><p>A tool, page or service that checks whether the manifest meets AIRPP requirements.</p></div></div></div>
+      <div id="spec-data" class="spec-block"><h2>Core data model</h2><p class="mt16">The minimum useful AIRPP manifest has seven core areas: version, manifest identity, record metadata, AI involvement, actors, timestamps and conformance level.</p><pre>{
+  "airpp_version": "0.3.0",
+  "manifest_id": "airpp-mf-demo-001",
+  "conformance_level": "basic",
+  "created_at": "2026-04-28T12:00:00Z",
+  "record": { "record_id": "rec-001", "title": "Example record" },
+  "ai_involvement": { "level": "language_assist", "human_final_responsibility": true },
+  "actors": [{ "actor_type": "human", "role": "author_and_reviewer" }]
+}</pre><table class="table mt24"><tr><th>Object</th><th>Role</th><th>Examples</th></tr><tr><td><code>record</code></td><td>Describes the thing being protected by provenance.</td><td>Report, article, R&D narrative, board paper, code review.</td></tr><tr><td><code>ai_involvement</code></td><td>Explains how AI was used and whether a human accepts final responsibility.</td><td>Drafting, summarisation, language assistance, generation.</td></tr><tr><td><code>actors</code></td><td>Identifies human, organisation and AI participants.</td><td>Author, reviewer, vendor, model provider.</td></tr><tr><td><code>sources</code></td><td>Optional but recommended source trail.</td><td>Documents, transcripts, datasets, web pages, repositories.</td></tr></table></div>
+      <div id="spec-levels" class="spec-block"><h2>Conformance levels</h2><div class="grid grid3 mt24"><div class="card"><span class="pill navy">Basic</span><h3 class="mt16">Minimum manifest</h3><p>Required fields, at least one human actor and explicit human final responsibility.</p></div><div class="card top"><span class="pill">Auditable</span><h3 class="mt16">Full provenance trail</h3><p>Includes sources, generation events, content blocks, review events and integrity hash.</p></div><div class="card"><span class="pill navy">High Assurance</span><h3 class="mt16">Signed and controlled</h3><p>Includes reviewer attestation, event chain, package hash and stricter role controls.</p></div></div></div>
+      <div id="spec-integrity" class="spec-block"><h2>Integrity and verification</h2><p class="mt16">AIRPP verification starts with structure. A verifier checks whether required fields exist, whether actors and responsibility are present, and whether the manifest is coherent. Later versions can add canonical hashes, signed attestations, C2PA bridges and W3C PROV mappings.</p><ul class="clean"><li>Canonical manifest hashing using SHA-256.</li><li>Optional package hash covering both record and manifest.</li><li>Review events that identify human sign-off and outcome.</li><li>Extension fields for regulated sectors, code provenance and evidence bundles.</li></ul></div>
+      <div id="spec-mcp" class="spec-block"><h2>MCP and API path</h2><p class="mt16">The project can operate without an API during early testing. The natural next layer is an API service exposing validation, registry and manifest submission endpoints, followed by an MCP server for provenance capture inside AI-enabled workflows.</p><pre>GET  /api/health
+POST /api/validate
+GET  /api/registry
+POST /api/manifests
+POST /api/review-events</pre><p>The browser-only validator is the first public utility. It proves the concept without hosting costs.</p></div>
+      <div id="spec-roadmap" class="spec-block"><h2>Specification roadmap</h2><table class="table mt16"><tr><th>Phase</th><th>Deliverable</th><th>Status</th></tr><tr><td>v0.3</td><td>Static website, public draft, browser validator</td><td><span class="status certified">Live</span></td></tr><tr><td>v0.4</td><td>JSON Schema, examples, downloadable implementation kit</td><td><span class="status progress">Next</span></td></tr><tr><td>v0.5</td><td>Registry submission model and issue templates</td><td><span class="status progress">Planned</span></td></tr><tr><td>v1.0</td><td>Stable conformance model, signed manifests, governance process</td><td><span class="status adopted">Target</span></td></tr></table></div>
+    </div></div></div>
   </section>
-</div>
 
-<!-- ══════════════════════════════════════════════ REGISTRY PAGE ═ -->
-<div id="page-registry" class="page">
-  <div class="page-hero">
-    <div class="container">
-      <div class="breadcrumb"><a href="#" onclick="showPage('home')">Home</a> › Registry</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap">
-        <div>
-          <p class="section-label">Public Registry</p>
-          <h1 style="font-size:2.2rem">Implementation Registry</h1>
-          <p class="mt-12" style="max-width:520px">Certified partners and adopted users building trusted AI-record workflows with AIRPP.</p>
-        </div>
-        <a href="#" class="btn btn-teal btn-lg arrow" onclick="showPage('join')">Register your implementation</a>
-      </div>
-    </div>
-  </div>
-
-  <section class="section">
-    <div class="container">
-      <!-- Filter tabs -->
-      <div style="display:flex;gap:8px;margin-bottom:32px;flex-wrap:wrap">
-        <button class="btn btn-primary btn-sm" onclick="filterRegistry('all',this)">All</button>
-        <button class="btn btn-ghost btn-sm" onclick="filterRegistry('certified',this)">Certified Partners</button>
-        <button class="btn btn-ghost btn-sm" onclick="filterRegistry('adopted',this)">Adopted Users</button>
-        <button class="btn btn-ghost btn-sm" onclick="filterRegistry('progress',this)">In Progress</button>
-      </div>
-
-      <div class="grid-3" id="registryGrid">
-        <!-- Certified -->
-        <div class="registry-card" data-status="certified">
-          <span class="reg-status reg-certified">Certified Partner</span>
-          <div class="reg-name">Veritas Analytics</div>
-          <div class="reg-type">Reporting Platform</div>
-          <div class="reg-desc">AI-native reporting platform with built-in AIRPP support at inference time.</div>
-          <a href="#" class="btn btn-ghost btn-sm mt-16" onclick="showToast('Registry entry coming soon')">View profile →</a>
-        </div>
-        <div class="registry-card" data-status="certified">
-          <span class="reg-status reg-certified">Certified Partner</span>
-          <div class="reg-name">LogixAI</div>
-          <div class="reg-type">AI Model Provider</div>
-          <div class="reg-desc">Foundation models with AIRPP provenance at inference. Fully schema-compliant.</div>
-          <a href="#" class="btn btn-ghost btn-sm mt-16" onclick="showToast('Registry entry coming soon')">View profile →</a>
-        </div>
-        <div class="registry-card" data-status="adopted">
-          <span class="reg-status reg-adopted">Adopted User</span>
-          <div class="reg-name">Northridge Group</div>
-          <div class="reg-type">Professional Services</div>
-          <div class="reg-desc">Using AIRPP to deliver trusted client reporting at scale. Audit-aligned workflows.</div>
-          <a href="#" class="btn btn-ghost btn-sm mt-16" onclick="showToast('Registry entry coming soon')">View profile →</a>
-        </div>
-        <div class="registry-card" data-status="adopted">
-          <span class="reg-status reg-adopted">Adopted User</span>
-          <div class="reg-name">Clearline Audit</div>
-          <div class="reg-type">Audit &amp; Assurance</div>
-          <div class="reg-desc">AIRPP adopted across audit workflows and client deliverables for traceability.</div>
-          <a href="#" class="btn btn-ghost btn-sm mt-16" onclick="showToast('Registry entry coming soon')">View profile →</a>
-        </div>
-        <div class="registry-card" data-status="progress">
-          <span class="reg-status reg-progress">In Progress</span>
-          <div class="reg-name">DataSphere</div>
-          <div class="reg-type">Data Platform</div>
-          <div class="reg-desc">Preparing AIRPP integration and conformance testing ahead of certification.</div>
-          <a href="#" class="btn btn-ghost btn-sm mt-16" onclick="showToast('Registry entry coming soon')">View profile →</a>
-        </div>
-        <div class="registry-card" style="border:2px dashed var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:180px;background:var(--soft-grey)">
-          <svg width="32" height="32" fill="none" viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" stroke="var(--line)" stroke-width="2"/><path d="M16 10v12M10 16h12" stroke="var(--muted)" stroke-width="2" stroke-linecap="round"/></svg>
-          <div style="font-size:.88rem;font-weight:600;color:var(--muted);margin-top:12px">Your organisation</div>
-          <a href="#" class="btn btn-teal btn-sm mt-12" onclick="showPage('join')">Register →</a>
-        </div>
-      </div>
-    </div>
-  </section>
-</div>
-
-<!-- ══════════════════════════════════════════════ SPEC PAGE ══════ -->
-<div id="page-spec" class="page">
-  <div class="page-hero">
-    <div class="container">
-      <div class="breadcrumb"><a href="#" onclick="showPage('home')">Home</a> › Specification</div>
-      <p class="section-label">Technical Specification</p>
-      <h1 style="font-size:2.2rem">AIRPP v0.2.0 Public Draft</h1>
-      <p class="mt-12">Frozen for implementation testing. Open, vendor-neutral, machine-readable provenance for AI-assisted records.</p>
-      <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
-        <span class="pill pill-teal">frozen_public_draft</span>
-        <span class="pill pill-navy">v0.2.0</span>
-        <span class="pill pill-navy">JSON Schema 2020-12</span>
-      </div>
-    </div>
-  </div>
-
-  <section class="section">
-    <div class="container">
-      <div style="display:grid;grid-template-columns:200px 1fr;gap:48px;align-items:start">
-        <div style="position:sticky;top:80px">
-          <nav class="spec-nav">
-            <a href="#" class="active" onclick="specSection(this,'overview')">Overview</a>
-            <a href="#" onclick="specSection(this,'schema')">Schema</a>
-            <a href="#" onclick="specSection(this,'conformance')">Conformance levels</a>
-            <a href="#" onclick="specSection(this,'manifest')">Manifest structure</a>
-            <a href="#" onclick="specSection(this,'extensions')">Extensions</a>
-            <a href="#" onclick="specSection(this,'mcp')">MCP binding</a>
-          </nav>
-        </div>
-        <div class="spec-body" id="specContent">
-
-          <div id="spec-overview">
-            <h2>Overview</h2>
-            <p class="mt-12">AIRPP (AI Record Provenance Protocol) is an open, vendor-neutral protocol that defines how to attach structured provenance metadata to AI-assisted records. It specifies who created a record, which AI systems were involved, which sources were used, what human reviews took place, and how the integrity of the record can be verified.</p>
-            <h3>Design principles</h3>
-            <p>AIRPP is designed to be minimal, composable and interoperable. The core schema captures the provenance chain of a record without mandating a particular AI system, workflow tool, or delivery mechanism. Extensions allow domain-specific enrichment without breaking core conformance.</p>
-            <h3>Protocol status</h3>
-            <p>AIRPP v0.2.0 is a frozen public draft. The schema is stable for implementation testing. Extensions are in draft status. The registry is open for self-registration.</p>
-          </div>
-
-          <div id="spec-schema" style="display:none">
-            <h2>Schema</h2>
-            <p class="mt-12">AIRPP manifests are JSON documents validated against the AIRPP JSON Schema 2020-12. The schema is hosted at the registry and versioned with each protocol release.</p>
-            <h3>Required fields</h3>
-            <div class="code-block">
-<span class="comment">// Minimum valid AIRPP v0.2.0 manifest (basic conformance)</span>
-{
-  <span class="key">"airpp_version"</span>: <span class="str">"0.2.0"</span>,
-  <span class="key">"manifest_id"</span>: <span class="str">"airpp-mf-abc123"</span>,
-  <span class="key">"conformance_level"</span>: <span class="str">"basic"</span>,
-  <span class="key">"created_at"</span>: <span class="str">"2026-04-26T09:00:00Z"</span>,
-  <span class="key">"record"</span>: {
-    <span class="key">"record_id"</span>: <span class="str">"rec-001"</span>,
-    <span class="key">"title"</span>: <span class="str">"My AI-assisted document"</span>,
-    <span class="key">"output_type"</span>: <span class="str">"general_document"</span>,
-    <span class="key">"language"</span>: <span class="str">"en-GB"</span>,
-    <span class="key">"created_at"</span>: <span class="str">"2026-04-26T09:00:00Z"</span>,
-    <span class="key">"current_version"</span>: <span class="str">"1.0.0"</span>
+  <section id="page-validator" class="page">
+    <div class="page-hero"><div class="container"><div class="breadcrumb"><a href="#home" onclick="showPage('home')">Home</a> › Validator</div><div class="label">Browser-only utility</div><h1 style="font-size:2.4rem">AIRPP Manifest Validator</h1><p class="mt16" style="max-width:760px">Paste an AIRPP manifest below. This validator runs entirely in the browser and checks the basic conformance fields. No API, upload or account is required.</p></div></div>
+    <div class="section"><div class="container grid grid2"><div class="card"><h3>Paste manifest JSON</h3><p class="mt8">Use the sample below or replace it with your own manifest.</p><textarea id="manifestInput" style="width:100%;min-height:460px;border:1.5px solid var(--line);border-radius:14px;padding:16px;font-family:ui-monospace,Consolas,monospace;font-size:.86rem">{
+  "airpp_version": "0.3.0",
+  "manifest_id": "airpp-mf-demo-001",
+  "conformance_level": "basic",
+  "created_at": "2026-04-28T12:00:00Z",
+  "record": {
+    "record_id": "rec-001",
+    "title": "Demo AI-assisted record",
+    "output_type": "general_document",
+    "language": "en-GB",
+    "created_at": "2026-04-28T12:00:00Z",
+    "current_version": "1.0.0"
   },
-  <span class="key">"ai_involvement"</span>: {
-    <span class="key">"level"</span>: <span class="str">"language_assist"</span>,
-    <span class="key">"human_final_responsibility"</span>: <span class="val">true</span>,
-    <span class="key">"summary"</span>: <span class="str">"AI was used to improve clarity."</span>
+  "ai_involvement": {
+    "level": "language_assist",
+    "human_final_responsibility": true,
+    "summary": "AI was used to improve clarity and structure."
   },
-  <span class="key">"actors"</span>: [
+  "actors": [
     {
-      <span class="key">"actor_id"</span>: <span class="str">"actor-human-001"</span>,
-      <span class="key">"actor_type"</span>: <span class="str">"human"</span>,
-      <span class="key">"display_name"</span>: <span class="str">"Responsible Author"</span>,
-      <span class="key">"role"</span>: <span class="str">"author_and_reviewer"</span>
+      "actor_id": "actor-human-001",
+      "actor_type": "human",
+      "display_name": "Responsible Author",
+      "role": "author_and_reviewer"
     }
   ]
-}</div>
-          </div>
-
-          <div id="spec-conformance" style="display:none">
-            <h2>Conformance levels</h2>
-            <p class="mt-12">AIRPP defines three conformance levels. Each builds on the previous.</p>
-            <div class="grid-3 mt-24" style="gap:16px">
-              <div class="card">
-                <span class="pill pill-navy mb-16">Basic</span>
-                <h3>Basic</h3>
-                <p style="font-size:.83rem;margin-top:8px">Minimum valid manifest with required fields and at least one accountable human actor.</p>
-                <ul class="check-list mt-12" style="font-size:.82rem">
-                  <li>Schema valid</li>
-                  <li>Accountable actor present</li>
-                  <li>Record metadata</li>
-                </ul>
-              </div>
-              <div class="card card-teal">
-                <span class="pill pill-teal mb-16">Auditable</span>
-                <h3>Auditable</h3>
-                <p style="font-size:.83rem;margin-top:8px">Full provenance chain: content blocks, sources, generation events, reviews, exports and integrity hash.</p>
-                <ul class="check-list mt-12" style="font-size:.82rem">
-                  <li>All Basic requirements</li>
-                  <li>Content blocks and sources</li>
-                  <li>Generation events with prompt records</li>
-                  <li>Review events</li>
-                  <li>Integrity hash</li>
-                </ul>
-              </div>
-              <div class="card">
-                <span class="pill pill-navy mb-16">High Assurance</span>
-                <h3>High Assurance</h3>
-                <p style="font-size:.83rem;margin-top:8px">Event chain, package hash, and at least one signed reviewer attestation. Suitable for regulated environments.</p>
-                <ul class="check-list mt-12" style="font-size:.82rem">
-                  <li>All Auditable requirements</li>
-                  <li>Event chain metadata</li>
-                  <li>Package/export hash</li>
-                  <li>Signed attestation</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          <div id="spec-manifest" style="display:none">
-            <h2>Manifest structure</h2>
-            <p class="mt-12">An AIRPP manifest is a self-describing JSON document. Key sections:</p>
-            <div class="grid-2 mt-20" style="gap:16px">
-              <div class="card"><h4>record</h4><p style="font-size:.82rem;margin-top:6px">Metadata about the output: title, type, language, version, intended use.</p></div>
-              <div class="card"><h4>actors</h4><p style="font-size:.82rem;margin-top:6px">Human and AI participants: author, reviewer, AI service, organisation.</p></div>
-              <div class="card"><h4>sources</h4><p style="font-size:.82rem;margin-top:6px">Documents, repositories, APIs and databases used as AI context.</p></div>
-              <div class="card"><h4>content_blocks</h4><p style="font-size:.82rem;margin-top:6px">Sections or blocks of the output with AI involvement level and verification status.</p></div>
-              <div class="card"><h4>generation_events</h4><p style="font-size:.82rem;margin-top:6px">When and how AI generated content, with model details and prompt records.</p></div>
-              <div class="card"><h4>review_events</h4><p style="font-size:.82rem;margin-top:6px">Human review steps with outcome, reviewer identity, and optional attestation.</p></div>
-              <div class="card"><h4>integrity</h4><p style="font-size:.82rem;margin-top:6px">SHA-256 canonical manifest hash, signature status, and optional event chain.</p></div>
-              <div class="card"><h4>extensions</h4><p style="font-size:.82rem;margin-top:6px">Domain-specific fields: code provenance, attestations, regulated tax, legal, W3C PROV, C2PA.</p></div>
-            </div>
-          </div>
-
-          <div id="spec-extensions" style="display:none">
-            <h2>Extensions</h2>
-            <p class="mt-12">AIRPP extensions add domain-specific fields without breaking core conformance. All extensions are in draft status.</p>
-            <div style="display:flex;flex-direction:column;gap:12px;margin-top:24px">
-              <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px">
-                <div><h4>airpp-code</h4><p style="font-size:.82rem;margin-top:4px">Code provenance: commits, branches, pull requests, files changed, CI tests.</p></div>
-                <span class="pill pill-navy">draft</span>
-              </div>
-              <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px">
-                <div><h4>airpp-attestation</h4><p style="font-size:.82rem;margin-top:4px">Signed attestations with signature algorithm and verification metadata.</p></div>
-                <span class="pill pill-navy">draft</span>
-              </div>
-              <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px">
-                <div><h4>airpp-reg-tax</h4><p style="font-size:.82rem;margin-top:4px">Regulated tax context: HMRC/DSIT alignment, scheme type, claim period fields.</p></div>
-                <span class="pill pill-navy">draft</span>
-              </div>
-              <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px">
-                <div><h4>airpp-legal</h4><p style="font-size:.82rem;margin-top:4px">Legal document provenance: jurisdiction, matter references, privilege flags.</p></div>
-                <span class="pill pill-navy">draft</span>
-              </div>
-              <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px">
-                <div><h4>airpp-prov-mapping</h4><p style="font-size:.82rem;margin-top:4px">W3C PROV ontology mapping for interoperability with existing provenance standards.</p></div>
-                <span class="pill pill-navy">draft</span>
-              </div>
-              <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px">
-                <div><h4>airpp-c2pa-bridge</h4><p style="font-size:.82rem;margin-top:4px">C2PA coalition for content authenticity bridge for media provenance interoperability.</p></div>
-                <span class="pill pill-navy">draft</span>
-              </div>
-            </div>
-          </div>
-
-          <div id="spec-mcp" style="display:none">
-            <h2>MCP binding</h2>
-            <p class="mt-12">AIRPP provides a formal Model Context Protocol (MCP) server that exposes provenance capture as MCP tools. Any MCP-compatible AI host can automatically capture structured provenance without changing the user workflow.</p>
-            <h3>Available tools</h3>
-            <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px">
-              <div class="card" style="padding:14px 18px"><code style="font-size:.82rem;color:var(--teal-dark);font-family:ui-monospace,monospace">airpp_start_manifest</code><span style="font-size:.82rem;color:var(--muted);margin-left:12px">Start a provenance session</span></div>
-              <div class="card" style="padding:14px 18px"><code style="font-size:.82rem;color:var(--teal-dark);font-family:ui-monospace,monospace">airpp_record_source</code><span style="font-size:.82rem;color:var(--muted);margin-left:12px">Record a source used as AI context</span></div>
-              <div class="card" style="padding:14px 18px"><code style="font-size:.82rem;color:var(--teal-dark);font-family:ui-monospace,monospace">airpp_record_generation</code><span style="font-size:.82rem;color:var(--muted);margin-left:12px">Record an AI generation event</span></div>
-              <div class="card" style="padding:14px 18px"><code style="font-size:.82rem;color:var(--teal-dark);font-family:ui-monospace,monospace">airpp_record_review</code><span style="font-size:.82rem;color:var(--muted);margin-left:12px">Record a human review step</span></div>
-              <div class="card" style="padding:14px 18px"><code style="font-size:.82rem;color:var(--teal-dark);font-family:ui-monospace,monospace">airpp_finalise_manifest</code><span style="font-size:.82rem;color:var(--muted);margin-left:12px">Hash, validate and store the manifest</span></div>
-            </div>
-            <h3>Claude Desktop config</h3>
-            <div class="code-block">{
-  <span class="key">"mcpServers"</span>: {
-    <span class="key">"airpp"</span>: {
-      <span class="key">"command"</span>: <span class="str">"node"</span>,
-      <span class="key">"args"</span>: [<span class="str">"/path/to/airpp-registry/mcp-server/airpp-mcp-server.js"</span>],
-      <span class="key">"env"</span>: {
-        <span class="key">"AIRPP_REGISTRY_URL"</span>: <span class="str">"https://registry.airpp.dev"</span>,
-        <span class="key">"AIRPP_API_KEY"</span>: <span class="str">"airpp_your-scoped-key"</span>
-      }
-    }
-  }
-}</div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  </section>
-</div>
-
-<!-- ══════════════════════════════════════════════ PARTNERS PAGE ═ -->
-<div id="page-partners" class="page">
-  <div class="page-hero">
-    <div class="container">
-      <div class="breadcrumb"><a href="#" onclick="showPage('home')">Home</a> › Partners</div>
-      <div style="display:grid;grid-template-columns:1fr auto;gap:48px;align-items:center">
-        <div>
-          <p class="section-label">Ecosystem</p>
-          <h1 style="font-size:2.2rem">Build trust into<br>AI-assisted records</h1>
-          <p class="mt-12" style="max-width:480px">AIRPP brings vendors and partners together around an open, vendor-neutral protocol for verifiable provenance, auditability and trust across tools and platforms.</p>
-          <div style="display:flex;gap:12px;margin-top:24px;flex-wrap:wrap">
-            <a href="#" class="btn btn-primary btn-lg arrow" onclick="showPage('join')">Apply as a Partner</a>
-            <a href="#" class="btn btn-outline btn-lg" onclick="showPage('spec')">Explore integrations</a>
-          </div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <div style="display:flex;gap:8px">
-            <span class="pill pill-teal">Open Standard</span>
-            <span class="pill pill-navy">Interoperable</span>
-          </div>
-          <div style="display:flex;gap:8px">
-            <span class="pill pill-teal">Verifiable</span>
-            <span class="pill pill-navy">Community-led</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <section class="section">
-    <div class="container">
-      <div class="section-header">
-        <h2>Why integrate AIRPP</h2>
-        <div class="teal-line"></div>
-      </div>
-      <div class="grid-4">
-        <div class="card text-center">
-          <div class="feature-icon teal-bg" style="margin:0 auto 14px">
-            <svg width="22" height="22" fill="none" viewBox="0 0 22 22"><circle cx="11" cy="11" r="8" stroke="#00B0A6" stroke-width="1.5"/><path d="M7 11l3 3 5-5" stroke="#00B0A6" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </div>
-          <h3>Registry presence</h3>
-          <p style="font-size:.83rem;margin-top:8px">Be discoverable in the public AIRPP registry and signal your commitment to trust.</p>
-        </div>
-        <div class="card text-center">
-          <div class="feature-icon teal-bg" style="margin:0 auto 14px">
-            <svg width="22" height="22" fill="none" viewBox="0 0 22 22"><path d="M11 2c0 0 7 2 7 7s-7 10-7 10S4 14 4 9s7-7 7-7z" stroke="#00B0A6" stroke-width="1.5" fill="none"/><path d="M8 10l2 2 4-4" stroke="#00B0A6" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </div>
-          <h3>Protocol conformance</h3>
-          <p style="font-size:.83rem;margin-top:8px">Implement to the open standard and prove verifiable provenance of AI outputs.</p>
-        </div>
-        <div class="card text-center">
-          <div class="feature-icon teal-bg" style="margin:0 auto 14px">
-            <svg width="22" height="22" fill="none" viewBox="0 0 22 22"><rect x="4" y="3" width="14" height="16" rx="2" stroke="#00B0A6" stroke-width="1.5"/><path d="M8 8h6M8 11h6M8 14h4" stroke="#00B0A6" stroke-width="1.3" stroke-linecap="round"/></svg>
-          </div>
-          <h3>Auditability</h3>
-          <p style="font-size:.83rem;margin-top:8px">Enable end-to-end traceability, easier audits, and stronger risk management.</p>
-        </div>
-        <div class="card text-center">
-          <div class="feature-icon teal-bg" style="margin:0 auto 14px">
-            <svg width="22" height="22" fill="none" viewBox="0 0 22 22"><path d="M5 6h2v10H5zm10 0h2v10h-2zM7 11h8" stroke="#00B0A6" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </div>
-          <h3>Cross-platform</h3>
-          <p style="font-size:.83rem;margin-top:8px">Exchange provenance across tools, services and ecosystems without vendor lock-in.</p>
-        </div>
-      </div>
-    </div>
+}</textarea><div class="mt16" style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn teal" onclick="validateManifest()">Validate manifest</button><button class="btn ghost" onclick="loadSample('auditable')">Load auditable sample</button><button class="btn ghost" onclick="copyManifest()">Copy JSON</button></div></div><div><div class="card"><h3>Validation result</h3><div id="validationResult" class="result warnbox">Awaiting validation.</div><h3 class="mt32">What this checks</h3><ul class="clean"><li>Valid JSON syntax.</li><li>Required AIRPP core fields.</li><li>Record metadata is present.</li><li>AI involvement is disclosed.</li><li>Human final responsibility is explicitly true.</li><li>At least one human actor is present.</li></ul></div><div class="card mt24"><h3>Important limitation</h3><p class="mt8">This validator checks basic structure only. It does not yet verify external sources, cryptographic hashes, signatures, identity, or whether the underlying content is factually correct.</p></div></div></div></div>
   </section>
 
-  <section class="section-sm" style="background:var(--soft-grey)">
-    <div class="container">
-      <div class="section-header"><h2>Certification &amp; Adoption</h2><div class="teal-line"></div></div>
-      <div class="grid-2" style="gap:32px">
-        <div class="card">
-          <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
-            <div class="badge-ring" style="width:80px;height:80px;flex-shrink:0">
-              <svg width="20" height="20" viewBox="0 0 34 34" fill="none"><rect x="3" y="1" width="21" height="27" rx="2.5" fill="white" stroke="#0B1D3A" stroke-width="1.5"/><path d="M21 22.5c0 0 5-1.5 5 2.5s-5 5.5-5 5.5-5-1.5-5-5.5 5-2.5 5-2.5z" fill="#00B0A6"/></svg>
-            </div>
-            <div>
-              <h3>AIRPP Certified Partner</h3>
-              <p style="font-size:.82rem;margin-top:4px">Awarded to organisations that implement AIRPP to the required standard and pass conformance validation.</p>
-            </div>
-          </div>
-          <ul class="check-list">
-            <li>Verified implementation</li>
-            <li>Public registry listing</li>
-            <li>Use of partner badge</li>
-            <li>Ongoing compliance</li>
-          </ul>
-        </div>
-        <div class="card">
-          <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
-            <div class="badge-adopted" style="width:80px;flex-shrink:0">
-              <div style="font-size:.65rem;font-weight:800;color:white;text-align:center">AIRPP<br><span style="font-size:.7rem;background:var(--teal);padding:2px 6px;border-radius:4px;display:inline-block;margin-top:4px">Adopted</span></div>
-            </div>
-            <div>
-              <h3>AIRPP Adopted User</h3>
-              <p style="font-size:.82rem;margin-top:4px">Awarded to organisations that have successfully integrated AIRPP and are actively using the protocol.</p>
-            </div>
-          </div>
-          <ul class="check-list">
-            <li>Recognised in the registry</li>
-            <li>Adoption badge</li>
-            <li>Access to community</li>
-            <li>Pathway to certification</li>
-          </ul>
-        </div>
-      </div>
-    </div>
+  <section id="page-registry" class="page">
+    <div class="page-hero"><div class="container"><div class="breadcrumb"><a href="#home" onclick="showPage('home')">Home</a> › Registry</div><div class="label">Public registry</div><h1 style="font-size:2.4rem">AIRPP Implementation Registry</h1><p class="mt16" style="max-width:760px">A public listing for organisations, tools and projects adopting AIRPP. During the static phase, entries are managed through GitHub pull requests or issue-based submissions.</p></div></div>
+    <div class="section"><div class="container"><div class="filterbar"><button class="btn primary small" onclick="filterRegistry('all',this)">All</button><button class="btn ghost small" onclick="filterRegistry('certified',this)">Certified</button><button class="btn ghost small" onclick="filterRegistry('adopted',this)">Adopted</button><button class="btn ghost small" onclick="filterRegistry('progress',this)">In progress</button></div><div id="registryGrid" class="grid grid3">
+      <div class="card registry-card" data-status="progress"><span class="status progress">In progress</span><h3 class="mt16">AIRPP Protocol Project</h3><p>Reference implementation and public specification site for testing AIRPP manifest validation and adoption workflows.</p><ul class="clean"><li>Static site live</li><li>Browser validator live</li><li>API service optional</li></ul></div>
+      <div class="card registry-card" data-status="adopted"><span class="status adopted">Adopted user</span><h3 class="mt16">Example Regulated Team</h3><p>Placeholder entry showing how a professional services or regulated organisation can declare AIRPP adoption.</p><ul class="clean"><li>Uses basic manifests</li><li>Human review required</li><li>Awaiting audit conformance</li></ul></div>
+      <div class="card registry-card" data-status="certified"><span class="status certified">Certified partner</span><h3 class="mt16">Example Vendor</h3><p>Placeholder entry for vendors who embed AIRPP manifest creation into AI-assisted products.</p><ul class="clean"><li>Schema compatible</li><li>Export support</li><li>Conformance test pending</li></ul></div>
+      <div class="card registry-card" data-status="progress"><span class="status progress">Open slot</span><h3 class="mt16">Your organisation</h3><p>Use the join form or GitHub issue route to register interest in being listed as an adopter, partner or pilot participant.</p><a href="#join" onclick="showPage('join')" class="btn teal small mt16">Register interest →</a></div>
+    </div><div class="card mt32"><h3>Proposed registry fields</h3><table class="table mt16"><tr><th>Field</th><th>Purpose</th></tr><tr><td>Organisation / project name</td><td>Public name of adopter, vendor, project or implementation.</td></tr><tr><td>Status</td><td>In progress, adopted, certified, deprecated or withdrawn.</td></tr><tr><td>Implementation type</td><td>Tool, model provider, consultancy, regulated team, public project, validator or archive.</td></tr><tr><td>Conformance level</td><td>Basic, auditable or high assurance.</td></tr><tr><td>Verification notes</td><td>Human-readable notes explaining the evidence for the listing.</td></tr></table></div></div></div>
   </section>
 
-  <section class="section">
-    <div class="container">
-      <div class="cta-band">
-        <div>
-          <h2>Help shape the trusted future of records.</h2>
-          <p class="mt-8">Join our pilot cohort to influence the standard, get early access, and grow with the ecosystem.</p>
-        </div>
-        <div style="display:flex;gap:12px;flex-shrink:0;flex-wrap:wrap">
-          <a href="#" class="btn btn-teal btn-lg arrow" onclick="showPage('join')">Apply as a Partner</a>
-          <a href="#" class="btn btn-outline btn-lg" style="color:white;border-color:rgba(255,255,255,.3)" onclick="showToast('Contact form coming soon — email hello@airpp.dev')">Contact the Ecosystem Team</a>
-        </div>
-      </div>
-    </div>
+  <section id="page-partners" class="page">
+    <div class="page-hero"><div class="container"><div class="breadcrumb"><a href="#home" onclick="showPage('home')">Home</a> › Partners</div><div class="label">Ecosystem</div><h1 style="font-size:2.4rem">Build AIRPP into your tools and services</h1><p class="mt16" style="max-width:760px">AIRPP needs vendors, auditors, professional bodies, compliance teams, open-source maintainers and research partners to test the protocol in real workflows.</p></div></div>
+    <div class="section"><div class="container"><div class="grid grid3"><div class="card top"><h3>Vendors</h3><p class="mt12">Add AIRPP export to AI writing, coding, reporting, document automation and workflow platforms.</p><ul class="clean"><li>Generate manifests</li><li>Record sources and events</li><li>Expose export controls</li></ul></div><div class="card top"><h3>Professional services</h3><p class="mt12">Use AIRPP for client-facing outputs where provenance, review and accountability matter.</p><ul class="clean"><li>Document review chain</li><li>Show human responsibility</li><li>Support future audits</li></ul></div><div class="card top"><h3>Governance partners</h3><p class="mt12">Help shape conformance, ethics, assurance, legal review and public adoption.</p><ul class="clean"><li>Review the draft</li><li>Propose extensions</li><li>Test real cases</li></ul></div></div><div class="card mt32"><h2>Certification model</h2><p class="mt16">Certification should remain lightweight at first. The early model should not become a bureaucratic badge factory. It should simply ask: does the implementation generate valid manifests, make AI involvement visible, preserve human responsibility, and allow exports that another system can inspect?</p><div class="grid grid3 mt24"><div><span class="pill navy">Stage 1</span><h3 class="mt12">Self-declared adoption</h3><p>Organisation states it is testing or using AIRPP.</p></div><div><span class="pill">Stage 2</span><h3 class="mt12">Validated implementation</h3><p>Sample manifests pass AIRPP conformance checks.</p></div><div><span class="pill navy">Stage 3</span><h3 class="mt12">Certified partner</h3><p>Implementation review, public listing and ongoing version commitments.</p></div></div></div></div></div>
   </section>
-</div>
 
-<!-- ══════════════════════════════════════════════ JOIN PAGE ══════ -->
-<div id="page-join" class="page">
-  <div class="page-hero">
-    <div class="container">
-      <div class="breadcrumb"><a href="#" onclick="showPage('home')">Home</a> › Join AIRPP</div>
-      <div style="display:grid;grid-template-columns:1fr 340px;gap:48px;align-items:start">
-        <div>
-          <div class="hero-badges"><span class="pill pill-teal">Open · Vendor-Neutral · Auditable</span></div>
-          <h1 style="font-size:2.4rem">Join the AIRPP ecosystem</h1>
-          <p class="mt-16" style="max-width:480px">Adopt the protocol. Integrate it into your tools and services. Partner with the initiative. Or support our mission to make AI-record provenance open, interoperable, and trusted.</p>
-        </div>
-        <div style="padding-top:20px">
-          <div style="display:flex;flex-direction:column;gap:10px">
-            <div class="card" style="padding:16px 20px;cursor:pointer;border-color:var(--teal)" onclick="setRole('user',this)">
-              <h4 style="color:var(--navy)">I'm a User</h4>
-              <p style="font-size:.8rem;margin-top:4px">Individuals and teams using AI-assisted records</p>
-            </div>
-            <div class="card" style="padding:16px 20px;cursor:pointer" onclick="setRole('vendor',this)">
-              <h4 style="color:var(--navy)">I'm a Vendor</h4>
-              <p style="font-size:.8rem;margin-top:4px">Developers and organisations building AI tools</p>
-            </div>
-            <div class="card" style="padding:16px 20px;cursor:pointer" onclick="setRole('partner',this)">
-              <h4 style="color:var(--navy)">I'm a Partner</h4>
-              <p style="font-size:.8rem;margin-top:4px">Consultancies, labs, and integrators</p>
-            </div>
-            <div class="card" style="padding:16px 20px;cursor:pointer" onclick="setRole('supporter',this)">
-              <h4 style="color:var(--navy)">I'm a Supporter</h4>
-              <p style="font-size:.8rem;margin-top:4px">Researchers, non-profits, mission-aligned supporters</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <section class="section">
-    <div class="container">
-      <div style="display:grid;grid-template-columns:340px 1fr;gap:64px;align-items:start">
-        <div>
-          <h2>Tell us about your interest</h2>
-          <p class="mt-12">Complete the form and we'll guide you to the right resources and next steps.</p>
-          <div style="display:flex;align-items:center;gap:8px;margin-top:20px;font-size:.8rem;color:var(--muted)">
-            <svg width="14" height="14" fill="none" viewBox="0 0 14 14"><rect x="2" y="5" width="10" height="8" rx="1.5" stroke="var(--muted)" stroke-width="1.2"/><path d="M4 5V4a3 3 0 016 0v1" stroke="var(--muted)" stroke-width="1.2" stroke-linecap="round"/></svg>
-            We respect your privacy. Your information will only be used to support your onboarding and engagement with AIRPP.
-          </div>
-
-          <!-- Steps -->
-          <div style="margin-top:36px;display:flex;flex-direction:column;gap:20px">
-            <div class="benefit-row"><div class="benefit-num">1</div><div><div class="fw-600" style="font-size:.88rem">Tell us about you</div><p style="font-size:.8rem;margin-top:2px">Share a few details about yourself or your organisation.</p></div></div>
-            <div class="benefit-row"><div class="benefit-num">2</div><div><div class="fw-600" style="font-size:.88rem">We'll be in touch</div><p style="font-size:.8rem;margin-top:2px">Our team will follow up with next steps and resources.</p></div></div>
-            <div class="benefit-row"><div class="benefit-num">3</div><div><div class="fw-600" style="font-size:.88rem">Get access</div><p style="font-size:.8rem;margin-top:2px">Access tools, docs and community channels for your role.</p></div></div>
-            <div class="benefit-row"><div class="benefit-num">4</div><div><div class="fw-600" style="font-size:.88rem">Start contributing</div><p style="font-size:.8rem;margin-top:2px">Integrate, collaborate, and help shape trusted AI records.</p></div></div>
-          </div>
-        </div>
-
-        <div class="card" style="padding:36px">
-          <h3 class="mb-24">Submit your interest</h3>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Full name *</label>
-              <input class="form-control" type="text" placeholder="Jane Doe" id="joinName">
-            </div>
-            <div class="form-group">
-              <label>Organisation</label>
-              <input class="form-control" type="text" placeholder="Your organisation" id="joinOrg">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Work email *</label>
-              <input class="form-control" type="email" placeholder="jane@organisation.com" id="joinEmail">
-            </div>
-            <div class="form-group">
-              <label>Role *</label>
-              <select class="form-control" id="joinRole">
-                <option value="">Select your role</option>
-                <option value="user">User — I use AI-assisted records</option>
-                <option value="vendor">Vendor — I build AI tools</option>
-                <option value="partner">Partner — Consultancy or integrator</option>
-                <option value="supporter">Supporter — Research or mission-aligned</option>
-                <option value="regulated">Regulated team — Compliance/audit</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>I'm interested in *</label>
-              <select class="form-control" id="joinIntent">
-                <option value="">Select your primary intent</option>
-                <option>Adopting the protocol</option>
-                <option>Integrating AIRPP into my product</option>
-                <option>Becoming a certified partner</option>
-                <option>Contributing to the standard</option>
-                <option>Staying informed</option>
-                <option>Supporting the initiative financially</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>How did you hear about AIRPP?</label>
-              <select class="form-control">
-                <option value="">Select an option</option>
-                <option>GitHub</option>
-                <option>LinkedIn</option>
-                <option>Word of mouth</option>
-                <option>Conference or event</option>
-                <option>Search engine</option>
-                <option>Partner referral</option>
-              </select>
-            </div>
-          </div>
-          <div class="checkbox-row mb-24">
-            <input type="checkbox" id="joinConsent">
-            <label for="joinConsent">I agree to receive updates and communications from AIRPP.</label>
-          </div>
-          <button class="btn btn-teal btn-lg arrow" onclick="submitJoinForm()" style="width:100%;justify-content:center">Submit interest</button>
-        </div>
-      </div>
-    </div>
+  <section id="page-support" class="page">
+    <div class="page-hero"><div class="container"><div class="breadcrumb"><a href="#home" onclick="showPage('home')">Home</a> › Support</div><div class="label">Resources</div><h1 style="font-size:2.4rem">Support, documentation and contribution routes</h1><p class="mt16" style="max-width:760px">This page replaces the previous dead support links with practical next steps for early adopters and contributors.</p></div></div>
+    <div class="section"><div class="container"><div class="grid grid3"><div class="card"><h3>Read the specification</h3><p class="mt8">Start with the public draft and data model. The specification is designed to be readable before it becomes fully formal.</p><a class="btn ghost small mt16" href="#spec" onclick="showPage('spec')">Open spec →</a></div><div class="card"><h3>Validate a manifest</h3><p class="mt8">Use the browser-only validator to test basic AIRPP conformance without an API service.</p><a class="btn teal small mt16" href="#validator" onclick="showPage('validator')">Open validator →</a></div><div class="card"><h3>Join the registry</h3><p class="mt8">Register interest as an adopter, vendor, partner or supporter. Static GitHub-based intake can be used before a backend exists.</p><a class="btn ghost small mt16" href="#join" onclick="showPage('join')">Register interest →</a></div><div class="card"><h3>Implementation guide</h3><p class="mt8">For vendors: generate a manifest alongside every AI-assisted record, expose it to users, and allow JSON export.</p><pre>record → manifest → review → export</pre></div><div class="card"><h3>Suggested GitHub issues</h3><p class="mt8">Create issue templates for: adopter registration, schema change request, extension proposal, bug report, and conformance question.</p></div><div class="card"><h3>Contact route</h3><p class="mt8">Until forms are wired to a backend, use the join page copy button or publish a contact email/GitHub discussion link in your repo README.</p></div></div></div></div>
   </section>
-</div>
 
-<!-- ══════════════════════════════════════════════ SUPPORT PAGE ══ -->
-<div id="page-support" class="page">
-  <div class="page-hero">
-    <div class="container">
-      <div class="breadcrumb"><a href="#" onclick="showPage('home')">Home</a> › Support</div>
-      <p class="section-label">Support</p>
-      <h1 style="font-size:2.2rem">Documentation &amp; Resources</h1>
-      <p class="mt-12">Everything you need to implement, integrate, and contribute to AIRPP.</p>
-    </div>
-  </div>
-  <section class="section">
-    <div class="container">
-      <div class="grid-3">
-        <a href="#" class="card" style="display:block" onclick="showPage('spec')">
-          <div class="feature-icon teal-bg mb-16">
-            <svg width="22" height="22" fill="none" viewBox="0 0 22 22"><rect x="3" y="2" width="16" height="18" rx="2.5" stroke="#00B0A6" stroke-width="1.5"/><line x1="7" y1="7" x2="15" y2="7" stroke="#00B0A6" stroke-width="1.3"/><line x1="7" y1="11" x2="15" y2="11" stroke="#00B0A6" stroke-width="1.3"/><line x1="7" y1="15" x2="11" y2="15" stroke="#00B0A6" stroke-width="1.3"/></svg>
-          </div>
-          <h3>Specification</h3>
-          <p class="mt-8" style="font-size:.85rem">Full AIRPP v0.2.0 public draft specification, schema reference, and conformance guide.</p>
-          <div class="btn btn-ghost btn-sm mt-16">Read the spec →</div>
-        </a>
-        <div class="card">
-          <div class="feature-icon teal-bg mb-16">
-            <svg width="22" height="22" fill="none" viewBox="0 0 22 22"><path d="M11 2C6.477 2 2 6.477 2 11s4.477 9 9 9 9-4.477 9-9-4.477-9-9-9z" stroke="#00B0A6" stroke-width="1.5"/><path d="M11 7v4l3 3" stroke="#00B0A6" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </div>
-          <h3>Guides</h3>
-          <p class="mt-8" style="font-size:.85rem">Step-by-step implementation guides for vendors, quick-start for developers, and integration walkthroughs.</p>
-          <div class="btn btn-ghost btn-sm mt-16" onclick="showToast('Guides launching soon')">View guides →</div>
-        </div>
-        <div class="card">
-          <div class="feature-icon teal-bg mb-16">
-            <svg width="22" height="22" fill="none" viewBox="0 0 22 22"><circle cx="11" cy="11" r="8" stroke="#00B0A6" stroke-width="1.5"/><path d="M9 9c0-1.105.895-2 2-2s2 .895 2 2c0 1.5-2 2-2 3m0 2.5v.5" stroke="#00B0A6" stroke-width="1.4" stroke-linecap="round"/></svg>
-          </div>
-          <h3>Community</h3>
-          <p class="mt-8" style="font-size:.85rem">Join the open-source community. Contribute to the standard, raise issues, and collaborate on GitHub.</p>
-          <div class="btn btn-ghost btn-sm mt-16" onclick="showToast('Community channels opening soon')">Join community →</div>
-        </div>
-        <div class="card">
-          <div class="feature-icon teal-bg mb-16">
-            <svg width="22" height="22" fill="none" viewBox="0 0 22 22"><rect x="2" y="3" width="18" height="14" rx="2.5" stroke="#00B0A6" stroke-width="1.5"/><path d="M2 8h18M6 3v5M16 3v5" stroke="#00B0A6" stroke-width="1.3" stroke-linecap="round"/></svg>
-          </div>
-          <h3>Registry API</h3>
-          <p class="mt-8" style="font-size:.85rem">Full REST API for manifest validation, implementation registration, and MCP-style provenance capture.</p>
-          <div class="btn btn-ghost btn-sm mt-16" onclick="showToast('API docs at /api/v1/spec')">API reference →</div>
-        </div>
-        <div class="card">
-          <div class="feature-icon teal-bg mb-16">
-            <svg width="22" height="22" fill="none" viewBox="0 0 22 22"><path d="M11 3c-4.418 0-8 3.582-8 8s3.582 8 8 8 8-3.582 8-8-3.582-8-8-8z" stroke="#00B0A6" stroke-width="1.5"/><path d="M8 11c.333-2.667 6-2.667 6 0s-3 3-3 5" stroke="#00B0A6" stroke-width="1.3" stroke-linecap="round"/><circle cx="11" cy="18" r=".8" fill="#00B0A6"/></svg>
-          </div>
-          <h3>FAQ</h3>
-          <p class="mt-8" style="font-size:.85rem">Answers to common questions about AIRPP, its relationship to other standards, and how to get started.</p>
-          <div class="btn btn-ghost btn-sm mt-16" onclick="showToast('FAQ coming soon')">View FAQ →</div>
-        </div>
-        <div class="card">
-          <div class="feature-icon teal-bg mb-16">
-            <svg width="22" height="22" fill="none" viewBox="0 0 22 22"><path d="M4 4h14v10H4z" stroke="#00B0A6" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 18h6M11 14v4" stroke="#00B0A6" stroke-width="1.3" stroke-linecap="round"/></svg>
-          </div>
-          <h3>Contact</h3>
-          <p class="mt-8" style="font-size:.85rem">For partnership enquiries, press, or governance questions, reach the core AIRPP team directly.</p>
-          <div class="btn btn-ghost btn-sm mt-16" onclick="showToast('Email: hello@airpp.dev')">Get in touch →</div>
-        </div>
-      </div>
-    </div>
+  <section id="page-join" class="page">
+    <div class="page-hero"><div class="container"><div class="breadcrumb"><a href="#home" onclick="showPage('home')">Home</a> › Join</div><div class="label">Get involved</div><h1 style="font-size:2.4rem">Join the AIRPP ecosystem</h1><p class="mt16" style="max-width:760px">This is a browser-only intake form. It prepares a structured message you can copy into a GitHub issue, email or discussion post. No backend required.</p></div></div>
+    <div class="section"><div class="container grid grid2"><div><h2>How to take part</h2><p class="mt16">The early project should prioritise useful public participation rather than hidden sign-up flows. For now, adoption can run through transparent GitHub issues and pull requests.</p><ul class="clean"><li>Users can test the validator.</li><li>Vendors can submit sample manifests.</li><li>Partners can propose extensions.</li><li>Auditors can challenge the conformance model.</li></ul></div><div class="card"><h3>Prepare participation message</h3><div class="form mt16"><input id="joinName" placeholder="Name"><input id="joinOrg" placeholder="Organisation / project"><input id="joinEmail" placeholder="Email or GitHub handle"><select id="joinRole"><option value="">Select role</option><option>User / adopter</option><option>Vendor</option><option>Partner</option><option>Auditor / reviewer</option><option>Supporter</option></select><textarea id="joinNotes" placeholder="Tell us what you want to do with AIRPP"></textarea><button class="btn teal" onclick="prepareJoinMessage()">Prepare message</button></div><div id="joinResult" class="result warnbox">Your prepared message will appear here.</div></div></div></div>
   </section>
-</div>
+</main>
 
-<!-- ══════════════════════════════════════════════ NEWSLETTER ═════ -->
-<div class="newsletter-strip">
-  <div class="container">
-    <div class="newsletter-inner">
-      <div class="newsletter-left">
-        <div class="newsletter-icon">
-          <svg width="22" height="22" fill="none" viewBox="0 0 22 22"><rect x="2" y="4" width="18" height="14" rx="2.5" stroke="white" stroke-width="1.5"/><path d="M2 8l9 6 9-6" stroke="white" stroke-width="1.3" stroke-linecap="round"/></svg>
-        </div>
-        <div>
-          <div style="font-weight:700;color:white;font-size:1rem">Stay informed. Shape the future.</div>
-          <div style="color:#7a9bc0;font-size:.82rem;margin-top:2px">Join our newsletter or apply for early access and pilot opportunities.</div>
-        </div>
-      </div>
-      <div>
-        <div class="newsletter-form">
-          <input class="newsletter-input" type="email" placeholder="Email address" id="newsletterEmail">
-          <select class="newsletter-select" id="newsletterRole">
-            <option>I am a...</option>
-            <option>User</option>
-            <option>Vendor</option>
-            <option>Partner</option>
-            <option>Supporter</option>
-          </select>
-          <button class="btn btn-teal" onclick="subscribeNewsletter()">Subscribe →</button>
-        </div>
-        <div style="font-size:.72rem;color:#5a7a9a;margin-top:8px;display:flex;align-items:center;gap:6px">
-          <svg width="11" height="11" fill="none" viewBox="0 0 11 11"><rect x="1.5" y="4" width="8" height="6" rx="1" stroke="#5a7a9a" stroke-width="1"/><path d="M3 4V3a2.5 2.5 0 015 0v1" stroke="#5a7a9a" stroke-width="1" stroke-linecap="round"/></svg>
-          We respect your privacy. Unsubscribe at any time.
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════ FOOTER ═════════ -->
 <footer>
-  <div class="container">
-    <div class="footer-top">
-      <div class="footer-brand">
-        <div style="display:flex;align-items:center;gap:8px">
-          <svg width="28" height="28" viewBox="0 0 34 34" fill="none"><rect x="3" y="1" width="21" height="27" rx="2.5" fill="rgba(255,255,255,.1)" stroke="rgba(255,255,255,.3)" stroke-width="1.5"/><circle cx="14" cy="9.75" r="2" fill="rgba(255,255,255,.15)" stroke="#00B0A6" stroke-width="1.5"/><circle cx="16" cy="15.25" r="2" fill="rgba(255,255,255,.2)" stroke="rgba(255,255,255,.4)" stroke-width="1"/><circle cx="14" cy="20.75" r="2" fill="rgba(255,255,255,.15)" stroke="#60A5FA" stroke-width="1.5"/><path d="M21 22.5c0 0 5-1.5 5 2.5s-5 5.5-5 5.5-5-1.5-5-5.5 5-2.5 5-2.5z" fill="#00B0A6"/><path d="M18.5 25.5l1.5 1.5 3-3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span style="font-weight:800;color:white;font-size:1.1rem">AIRPP</span>
-        </div>
-        <p style="margin-top:10px">Open. Portable. Provable.</p>
-        <div class="footer-tagline">AI Record Provenance Protocol</div>
-        <div style="margin-top:12px"><span class="pill-os" style="border-color:rgba(0,176,166,.4);color:#00B0A6;font-size:.68rem;padding:3px 10px;border-radius:999px;border:1px solid;font-weight:600">Open-source initiative</span></div>
-      </div>
-      <div class="footer-links-grid">
-        <div class="footer-col">
-          <h5>About</h5>
-          <a href="#" onclick="showPage('home')">Mission</a>
-          <a href="#" onclick="showToast('Governance page coming soon')">Governance</a>
-          <a href="#" onclick="showToast('Roadmap coming soon')">Roadmap</a>
-          <a href="#" onclick="showToast('FAQ coming soon')">FAQs</a>
-        </div>
-        <div class="footer-col">
-          <h5>Specification</h5>
-          <a href="#" onclick="showPage('spec');specSection(null,'overview')">Overview</a>
-          <a href="#" onclick="showPage('spec');specSection(null,'schema')">Data Model</a>
-          <a href="#" onclick="showToast('Security guide coming soon')">Security</a>
-          <a href="#" onclick="showPage('spec');specSection(null,'conformance')">Conformance</a>
-        </div>
-        <div class="footer-col">
-          <h5>Registry</h5>
-          <a href="#" onclick="showPage('partners')">Partners</a>
-          <a href="#" onclick="showPage('registry')">Implementations</a>
-          <a href="#" onclick="showPage('registry');filterRegistry('adopted',null)">Adopted Users</a>
-          <a href="#" onclick="showPage('support')">Tools</a>
-        </div>
-        <div class="footer-col">
-          <h5>Support</h5>
-          <a href="#" onclick="showPage('support')">Documentation</a>
-          <a href="#" onclick="showToast('Guides coming soon')">Guides</a>
-          <a href="#" onclick="showToast('Community opening soon')">Community</a>
-          <a href="#" onclick="showToast('Email: hello@airpp.dev')">Contact</a>
-        </div>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <div>
-        <p>© 2025 AIRPP Project. All rights reserved.</p>
-        <p style="margin-top:4px">Built with trust, transparency, and open collaboration.</p>
-      </div>
-      <div class="social-icons">
-        <a href="#" class="social-icon" onclick="showToast('GitHub coming soon')">
-          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-        </a>
-        <a href="#" class="social-icon" onclick="showToast('LinkedIn coming soon')">
-          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 01.016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4z"/></svg>
-        </a>
-        <a href="#" class="social-icon" onclick="showToast('X/Twitter coming soon')">
-          <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865l8.875 11.633Z"/></svg>
-        </a>
-        <a href="#" class="social-icon" onclick="showToast('Email: hello@airpp.dev')">
-          <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><rect x="1" y="3" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M1 5l7 5 7-5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-        </a>
-      </div>
-    </div>
-  </div>
+  <div class="container"><div class="footer-grid"><div><div class="brand"><svg class="brand-mark" viewBox="0 0 34 34" fill="none"><rect x="3" y="1" width="21" height="27" rx="2.5" fill="rgba(255,255,255,.1)" stroke="rgba(255,255,255,.35)" stroke-width="1.5"/><path d="M21 22.5c0 0 5-1.5 5 2.5s-5 5.5-5 5.5-5-1.5-5-5.5 5-2.5 5-2.5z" fill="#00B0A6"/><path d="M18.5 25.5l1.5 1.5 3-3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span><span class="brand-title" style="color:#fff">AIRPP</span><br><span class="brand-sub">AI Record Provenance Protocol</span></span></div><p class="mt16">Open. Portable. Provable.</p><span class="pill" style="margin-top:8px">Open-source initiative</span></div><div class="footer-links"><div><h4>Project</h4><a href="#home" onclick="showPage('home')">About</a><a href="#registry" onclick="showPage('registry')">Registry</a><a href="#partners" onclick="showPage('partners')">Partners</a></div><div><h4>Specification</h4><a href="#spec" onclick="showPage('spec')">Overview</a><a href="#validator" onclick="showPage('validator')">Validator</a><a href="#spec" onclick="showPage('spec');specTab('data')">Data model</a></div><div><h4>Support</h4><a href="#support" onclick="showPage('support')">Resources</a><a href="#join" onclick="showPage('join')">Join</a><a href="#support" onclick="showPage('support')">Implementation guide</a></div><div><h4>Status</h4><a>Static website live</a><a>Validator live</a><a>API optional later</a></div></div></div><p class="mt24" style="font-size:.82rem">© 2026 AIRPP Project. Built for open collaboration and transparent AI-assisted records.</p></div>
 </footer>
-
-<!-- Toast notification -->
-<div class="toast" id="toast" style="display:none">
-  <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" stroke="#00B0A6" stroke-width="1.3"/><path d="M5.5 8l2 2 3-3" stroke="#00B0A6" stroke-width="1.3" stroke-linecap="round"/></svg>
-  <span id="toastMsg"></span>
-</div>
-
+<div id="toast" class="toast"></div>
 <script>
-  // ─── SPA routing ────────────────────────────────────────────────
-  function showPage(name) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    const pg = document.getElementById('page-' + name);
-    if (pg) pg.classList.add('active');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  // ─── Mobile nav ──────────────────────────────────────────────────
-  function toggleMobileNav() {
-    document.getElementById('mobileNav').classList.toggle('open');
-  }
-
-  // ─── Registry filter ─────────────────────────────────────────────
-  function filterRegistry(status, btn) {
-    if (btn) {
-      document.querySelectorAll('#page-registry .btn').forEach(b => {
-        b.className = b.className.replace('btn-primary','btn-ghost');
-      });
-      btn.className = btn.className.replace('btn-ghost','btn-primary');
-    }
-    document.querySelectorAll('#registryGrid .registry-card').forEach(card => {
-      if (status === 'all' || card.dataset.status === status) {
-        card.style.display = '';
-      } else {
-        card.style.display = 'none';
-      }
-    });
-  }
-
-  // ─── Spec section nav ─────────────────────────────────────────────
-  function specSection(link, section) {
-    document.querySelectorAll('.spec-nav a').forEach(a => a.classList.remove('active'));
-    if (link) link.classList.add('active');
-    else {
-      const links = document.querySelectorAll('.spec-nav a');
-      const sectionMap = { overview:0, schema:1, conformance:2, manifest:3, extensions:4, mcp:5 };
-      if (links[sectionMap[section]]) links[sectionMap[section]].classList.add('active');
-    }
-    ['overview','schema','conformance','manifest','extensions','mcp'].forEach(s => {
-      const el = document.getElementById('spec-' + s);
-      if (el) el.style.display = s === section ? '' : 'none';
-    });
-  }
-
-  // ─── Role selection on join page ──────────────────────────────────
-  function setRole(role, card) {
-    document.querySelectorAll('#page-join .card').forEach(c => {
-      c.style.borderColor = '';
-    });
-    if (card) card.style.borderColor = 'var(--teal)';
-    const roleMap = { user: 'User — I use AI-assisted records', vendor: 'Vendor — I build AI tools', partner: 'Partner — Consultancy or integrator', supporter: 'Supporter — Research or mission-aligned' };
-    const sel = document.getElementById('joinRole');
-    if (sel) {
-      for (let opt of sel.options) {
-        if (opt.value === role) { sel.value = role; break; }
-      }
-    }
-  }
-
-  // ─── Form submit ──────────────────────────────────────────────────
-  function submitJoinForm() {
-    const name = document.getElementById('joinName')?.value.trim();
-    const email = document.getElementById('joinEmail')?.value.trim();
-    const role = document.getElementById('joinRole')?.value;
-    if (!name) { showToast('Please enter your full name'); return; }
-    if (!email || !email.includes('@')) { showToast('Please enter a valid email address'); return; }
-    if (!role) { showToast('Please select your role'); return; }
-    showToast('Thank you! We\'ll be in touch soon.');
-    ['joinName','joinOrg','joinEmail','joinRole','joinIntent','joinConsent'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) { if (el.type === 'checkbox') el.checked = false; else el.value = ''; }
-    });
-  }
-
-  function subscribeNewsletter() {
-    const email = document.getElementById('newsletterEmail')?.value.trim();
-    if (!email || !email.includes('@')) { showToast('Please enter a valid email address'); return; }
-    showToast('Subscribed! You\'ll hear from us soon.');
-    document.getElementById('newsletterEmail').value = '';
-  }
-
-  // ─── Toast ────────────────────────────────────────────────────────
-  let toastTimer;
-  function showToast(msg) {
-    const toast = document.getElementById('toast');
-    document.getElementById('toastMsg').textContent = msg;
-    toast.style.display = 'flex';
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { toast.style.display = 'none'; }, 3500);
-  }
-
-  // Handle hash routing from server-side navigations
-  const hashPage = location.hash.replace('#','') || 'home';
-  if (['home','registry','spec','partners','join','support'].includes(hashPage)) showPage(hashPage);
+const pages=['home','spec','validator','registry','partners','support','join'];
+function showPage(name){if(!pages.includes(name))name='home';document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById('page-'+name).classList.add('active');history.replaceState(null,'','#'+name);window.scrollTo({top:0,behavior:'smooth'});}
+function toggleMobile(){document.getElementById('mobile').classList.toggle('open')}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',2600)}
+function specTab(name,el){document.querySelectorAll('.spec-block').forEach(x=>x.classList.remove('active'));document.getElementById('spec-'+name).classList.add('active');document.querySelectorAll('.side-nav a').forEach(a=>a.classList.remove('active'));if(el)el.classList.add('active');else{const m={overview:0,data:1,levels:2,integrity:3,mcp:4,roadmap:5};document.querySelectorAll('.side-nav a')[m[name]||0]?.classList.add('active')}}
+function filterRegistry(status,btn){document.querySelectorAll('.filterbar .btn').forEach(b=>{b.classList.remove('primary');b.classList.add('ghost')});if(btn){btn.classList.add('primary');btn.classList.remove('ghost')}document.querySelectorAll('.registry-card').forEach(c=>{c.style.display=(status==='all'||c.dataset.status===status)?'block':'none'})}
+function required(data,path,label,errors){let obj=data;for(const p of path.split('.')){if(obj&&Object.prototype.hasOwnProperty.call(obj,p)){obj=obj[p]}else{errors.push('Missing required field: '+label+' ('+path+')');return}}if(obj===''||obj===null||obj===undefined)errors.push('Empty required field: '+label+' ('+path+')')}
+function validateManifest(){const out=document.getElementById('validationResult');let data;try{data=JSON.parse(document.getElementById('manifestInput').value)}catch(e){out.className='result bad';out.textContent='Invalid JSON:\n'+e.message;return}const errors=[];['airpp_version','manifest_id','conformance_level','created_at','record.record_id','record.title','record.output_type','record.language','record.created_at','record.current_version','ai_involvement.level','ai_involvement.human_final_responsibility','ai_involvement.summary'].forEach(p=>required(data,p,p,errors));if(!Array.isArray(data.actors)||data.actors.length===0)errors.push('At least one actor is required.');else if(!data.actors.some(a=>a.actor_type==='human'))errors.push('At least one human actor is required.');if(data.ai_involvement&&data.ai_involvement.human_final_responsibility!==true)errors.push('human_final_responsibility must be true for basic AIRPP conformance.');if(errors.length){out.className='result bad';out.textContent='AIRPP validation failed:\n\n'+errors.join('\n')}else{out.className='result ok';out.textContent='AIRPP validation passed.\n\nBasic conformance checks are satisfied.\n\nThis does not yet verify signatures, external sources, identity, factual accuracy or cryptographic hashes.'}}
+function loadSample(type){const sample={airpp_version:'0.3.0',manifest_id:'airpp-mf-auditable-001',conformance_level:'auditable',created_at:'2026-04-28T12:00:00Z',record:{record_id:'rec-audit-001',title:'Auditable AIRPP sample',output_type:'technical_report',language:'en-GB',created_at:'2026-04-28T12:00:00Z',current_version:'1.0.0'},ai_involvement:{level:'draft_and_review_support',human_final_responsibility:true,summary:'AI was used to structure a technical report and suggest wording. A human reviewer checked and accepted responsibility.'},actors:[{actor_id:'actor-human-001',actor_type:'human',display_name:'Responsible Reviewer',role:'reviewer'},{actor_id:'actor-ai-001',actor_type:'ai_system',display_name:'AI drafting assistant',role:'language_assistant'}],sources:[{source_id:'src-001',source_type:'document',title:'Source evidence bundle',verification_status:'available'}],review_events:[{reviewer_actor_id:'actor-human-001',review_outcome:'approved_with_edits',reviewed_at:'2026-04-28T13:00:00Z'}]};document.getElementById('manifestInput').value=JSON.stringify(sample,null,2);toast('Auditable sample loaded')}
+function copyManifest(){navigator.clipboard.writeText(document.getElementById('manifestInput').value).then(()=>toast('Manifest copied'))}
+function prepareJoinMessage(){const name=document.getElementById('joinName').value.trim();const org=document.getElementById('joinOrg').value.trim();const email=document.getElementById('joinEmail').value.trim();const role=document.getElementById('joinRole').value;const notes=document.getElementById('joinNotes').value.trim();const msg=`AIRPP participation request\n\nName: ${name||'[not provided]'}\nOrganisation/project: ${org||'[not provided]'}\nContact/GitHub: ${email||'[not provided]'}\nRole: ${role||'[not selected]'}\n\nInterest / proposed use:\n${notes||'[not provided]'}\n\nRequested next step:\nPlease add this to the AIRPP adoption/partner review list.`;const out=document.getElementById('joinResult');out.className='result ok';out.textContent=msg;navigator.clipboard?.writeText(msg).then(()=>toast('Message copied'))}
+window.addEventListener('load',()=>{const hash=location.hash.replace('#','');if(pages.includes(hash))showPage(hash)});
 </script>
 </body>
 </html>
