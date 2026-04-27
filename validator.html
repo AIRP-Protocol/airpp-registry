@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <title>AIRPP Validator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: Inter, system-ui, sans-serif;
+      background: #f6f8fb;
+      color: #0B1D3A;
+      margin: 0;
+      padding: 40px;
+    }
+    .wrap {
+      max-width: 960px;
+      margin: auto;
+      background: white;
+      border: 1px solid #d0d5dd;
+      border-radius: 18px;
+      padding: 32px;
+      box-shadow: 0 8px 30px rgba(11,29,58,.08);
+    }
+    h1 { margin-top: 0; }
+    textarea {
+      width: 100%;
+      min-height: 360px;
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 14px;
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid #d0d5dd;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 16px;
+      background: #00B0A6;
+      color: white;
+      border: 0;
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 12px;
+      font-weight: 600;
+      white-space: pre-wrap;
+    }
+    .ok {
+      background: #e0f7f6;
+      color: #008f87;
+      border: 1px solid #b2ebe9;
+    }
+    .bad {
+      background: #fff1f1;
+      color: #9b1c1c;
+      border: 1px solid #ffcccc;
+    }
+    .warn {
+      background: #fff8e1;
+      color: #7a5200;
+      border: 1px solid #f5d46b;
+    }
+    a { color: #00B0A6; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <p><a href="./">← Back to AIRPP</a></p>
+
+    <h1>AIRPP Manifest Validator</h1>
+    <p>Paste an AIRPP manifest below. This browser-only validator checks the core fields required for a basic AIRPP record.</p>
+
+    <textarea id="input">{
+  "airpp_version": "0.2.0",
+  "manifest_id": "airpp-mf-demo-001",
+  "conformance_level": "basic",
+  "created_at": "2026-04-28T12:00:00Z",
+  "record": {
+    "record_id": "rec-001",
+    "title": "Demo AI-assisted record",
+    "output_type": "general_document",
+    "language": "en-GB",
+    "created_at": "2026-04-28T12:00:00Z",
+    "current_version": "1.0.0"
+  },
+  "ai_involvement": {
+    "level": "language_assist",
+    "human_final_responsibility": true,
+    "summary": "AI was used to improve clarity and structure."
+  },
+  "actors": [
+    {
+      "actor_id": "actor-human-001",
+      "actor_type": "human",
+      "display_name": "Responsible Author",
+      "role": "author_and_reviewer"
+    }
+  ]
+}</textarea>
+
+    <button onclick="validateManifest()">Validate Manifest</button>
+
+    <div id="result" class="result warn">Awaiting validation.</div>
+  </div>
+
+<script>
+function validateManifest() {
+  const result = document.getElementById("result");
+  let data;
+
+  try {
+    data = JSON.parse(document.getElementById("input").value);
+  } catch (e) {
+    result.className = "result bad";
+    result.textContent = "Invalid JSON:\n" + e.message;
+    return;
+  }
+
+  const errors = [];
+
+  function required(path, label) {
+    const parts = path.split(".");
+    let obj = data;
+    for (const p of parts) {
+      if (obj && Object.prototype.hasOwnProperty.call(obj, p)) {
+        obj = obj[p];
+      } else {
+        errors.push("Missing required field: " + label + " (" + path + ")");
+        return;
+      }
+    }
+    if (obj === "" || obj === null || obj === undefined) {
+      errors.push("Empty required field: " + label + " (" + path + ")");
+    }
+  }
+
+  required("airpp_version", "AIRPP version");
+  required("manifest_id", "Manifest ID");
+  required("conformance_level", "Conformance level");
+  required("created_at", "Manifest created timestamp");
+  required("record.record_id", "Record ID");
+  required("record.title", "Record title");
+  required("record.output_type", "Output type");
+  required("record.language", "Language");
+  required("record.created_at", "Record created timestamp");
+  required("record.current_version", "Current version");
+  required("ai_involvement.level", "AI involvement level");
+  required("ai_involvement.human_final_responsibility", "Human final responsibility");
+  required("ai_involvement.summary", "AI involvement summary");
+
+  if (!Array.isArray(data.actors) || data.actors.length === 0) {
+    errors.push("At least one actor is required.");
+  } else {
+    const humanActor = data.actors.some(a => a.actor_type === "human");
+    if (!humanActor) {
+      errors.push("At least one human actor is required.");
+    }
+  }
+
+  if (data.ai_involvement && data.ai_involvement.human_final_responsibility !== true) {
+    errors.push("human_final_responsibility must be true for basic AIRPP conformance.");
+  }
+
+  if (errors.length) {
+    result.className = "result bad";
+    result.textContent = "AIRPP validation failed:\n\n" + errors.join("\n");
+  } else {
+    result.className = "result ok";
+    result.textContent = "AIRPP validation passed.\n\nBasic conformance checks are satisfied.";
+  }
+}
+</script>
+</body>
+</html>
